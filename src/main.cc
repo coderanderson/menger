@@ -93,6 +93,7 @@ void
 CreateTriangle(std::vector<glm::vec4>& vertices,
         std::vector<glm::uvec3>& indices)
 {
+
 	vertices.push_back(glm::vec4(-0.5f, -0.5f, -0.5f, 1.0f));
 	vertices.push_back(glm::vec4(0.5f, -0.5f, -0.5f, 1.0f));
 	vertices.push_back(glm::vec4(0.0f, 0.5f, -0.5f, 1.0f));
@@ -183,7 +184,7 @@ int main(int argc, char* argv[])
 {
 	std::string window_title = "Menger";
 	if (!glfwInit()) exit(EXIT_FAILURE);
-	g_menger = std::make_shared<Menger>();
+	g_menger = std::make_shared<Menger>(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
 	glfwSetErrorCallback(ErrorCallback);
 
 	// Ask an OpenGL 4.1 core profile context
