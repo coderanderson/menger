@@ -145,7 +145,7 @@ SaveObj(const std::string& file,
 	// std::cout << "indices size: " << indices.size() << std::endl;
 	for(auto& idx : indices) {
 		// std::cout << "f " << idx.x + 1 << " " << idx.y + 1<< " " << idx.z + 1 << std::endl;
-		outfile << "f " << idx.x << " " << idx.y << " " << idx.z << "\n";
+		outfile << "f " << idx.x + 1 << " " << idx.y + 1 << " " << idx.z + 1 << "\n";
 	}
 	outfile.close();
 	std::cout << "write obj file done " << std::endl;
