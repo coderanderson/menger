@@ -15,6 +15,7 @@
 #include "menger.h"
 #include "camera.h"
 
+
 int window_width = 800, window_height = 600;
 
 // VBO and VAO descriptors.
@@ -118,6 +119,9 @@ void main()
 }
 )zzz";
 
+std::vector<glm::vec4> obj_vertices;
+std::vector<glm::uvec3> obj_faces;
+
 void
 CreateTriangle(std::vector<glm::vec4>& vertices,
         std::vector<glm::uvec3>& indices)
@@ -136,6 +140,19 @@ SaveObj(const std::string& file,
         const std::vector<glm::vec4>& vertices,
         const std::vector<glm::uvec3>& indices)
 {
+	std::cout << "writing obj file" << std::endl;
+	std::ofstream outfile;
+	outfile.open(file);
+	for(auto& v : vertices) {
+		outfile << "v " << v.x << " " << v.y << " " << v.z << "\n";
+	}
+	// std::cout << "indices size: " << indices.size() << std::endl;
+	for(auto& idx : indices) {
+		// std::cout << "f " << idx.x + 1 << " " << idx.y + 1<< " " << idx.z + 1 << std::endl;
+		outfile << "f " << idx.x << " " << idx.y << " " << idx.z << "\n";
+	}
+	outfile.close();
+	std::cout << "write obj file done " << std::endl;
 }
 
 void
@@ -161,6 +178,7 @@ KeyCallback(GLFWwindow* window,
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	else if (key == GLFW_KEY_S && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
 		// FIXME: save geometry to OBJ
+		SaveObj("geometry.obj", obj_vertices, obj_faces);
 	} else if (key == GLFW_KEY_W && action != GLFW_RELEASE) {
 		// FIXME: WASD
 		g_camera.keyZoom(1);
@@ -275,8 +293,7 @@ int main(int argc, char* argv[])
 	std::cout << "Renderer: " << renderer << "\n";
 	std::cout << "OpenGL version supported:" << version << "\n";
 
-	std::vector<glm::vec4> obj_vertices;
-	std::vector<glm::uvec3> obj_faces;
+	
 
         //FIXME: Create the geometry from a Menger object.
         //CreateTriangle(obj_vertices, obj_faces);
