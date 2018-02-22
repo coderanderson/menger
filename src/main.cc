@@ -159,18 +159,29 @@ KeyCallback(GLFWwindow* window,
 int g_current_button;
 bool g_mouse_pressed;
 
+bool g_prev_pressed;
+glm::vec2 prev(0.0f, 0.0f);
+
 void
 MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
 {
-	if (!g_mouse_pressed)
-		return;
-	if (g_current_button == GLFW_MOUSE_BUTTON_LEFT) {
-		// FIXME: left drag
-	} else if (g_current_button == GLFW_MOUSE_BUTTON_RIGHT) {
-		// FIXME: middle drag
-	} else if (g_current_button == GLFW_MOUSE_BUTTON_MIDDLE) {
-		// FIXME: right drag
+
+	glm::vec2 mouse(mouse_x, mouse_y);
+	glm::vec2 diff = mouse - prev;
+
+	if (g_mouse_pressed && g_prev_pressed) {
+		if (g_current_button == GLFW_MOUSE_BUTTON_LEFT) {
+			g_camera.pitch((180.0f / M_PI) * -diff.y / window_width);
+			g_camera.yaw((180.0f /  M_PI) * -diff.x / window_height);
+		} else if (g_current_button == GLFW_MOUSE_BUTTON_RIGHT || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
+			g_camera.zoom(10.0f * diff.y / window_height);
+		} else if (g_current_button == GLFW_MOUSE_BUTTON_MIDDLE || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
+			g_camera.translate(25.0f * glm::vec2(-diff.x / window_width, diff.y / window_height));
+		}
 	}
+
+	prev = glm::vec2(mouse_x, mouse_y);
+	g_prev_pressed = g_mouse_pressed;
 }
 
 void
