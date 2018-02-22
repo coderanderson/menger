@@ -72,6 +72,14 @@ src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/exponential.hpp
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/fwd.hpp
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/geometric.hpp
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/glm.hpp
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtc/constants.hpp
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtc/constants.inl
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtc/matrix_transform.hpp
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtc/matrix_transform.inl
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtx/rotate_vector.hpp
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtx/rotate_vector.inl
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtx/transform.hpp
+src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/gtx/transform.inl
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/integer.hpp
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/mat2x2.hpp
 src/CMakeFiles/menger.dir/camera.cc.o: /usr/local/include/glm/mat2x3.hpp
@@ -184,8 +192,12 @@ src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtc/vec1.hpp
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtc/vec1.inl
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/dual_quaternion.hpp
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/dual_quaternion.inl
+src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/rotate_vector.hpp
+src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/rotate_vector.inl
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/string_cast.hpp
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/string_cast.inl
+src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/transform.hpp
+src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/gtx/transform.inl
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/integer.hpp
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/mat2x2.hpp
 src/CMakeFiles/menger.dir/main.cc.o: /usr/local/include/glm/mat2x3.hpp

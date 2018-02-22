@@ -9,11 +9,17 @@
 ../lib/utgraphicsutil/debuggl.h
 
 /Users/dranderson/Downloads/menger/src/camera.cc
+fstream
+-
+iostream
+-
 camera.h
 /Users/dranderson/Downloads/menger/src/camera.h
 
 /Users/dranderson/Downloads/menger/src/camera.h
 glm/glm.hpp
+-
+glm/gtx/rotate_vector.hpp
 -
 
 /Users/dranderson/Downloads/menger/src/main.cc
@@ -48,6 +54,8 @@ camera.h
 menger.h
 /Users/dranderson/Downloads/menger/src/menger.h
 queue
+-
+iostream
 -
 
 /Users/dranderson/Downloads/menger/src/menger.h
@@ -828,6 +836,16 @@ dual_quaternion.inl
 limits
 -
 
+/usr/local/include/glm/gtx/rotate_vector.hpp
+../glm.hpp
+/usr/local/include/glm/glm.hpp
+../gtx/transform.hpp
+/usr/local/include/glm/gtx/transform.hpp
+rotate_vector.inl
+/usr/local/include/glm/gtx/rotate_vector.inl
+
+/usr/local/include/glm/gtx/rotate_vector.inl
+
 /usr/local/include/glm/gtx/string_cast.hpp
 ../glm.hpp
 /usr/local/include/glm/glm.hpp
@@ -847,6 +865,16 @@ cstdarg
 -
 cstdio
 -
+
+/usr/local/include/glm/gtx/transform.hpp
+../glm.hpp
+/usr/local/include/glm/glm.hpp
+../gtc/matrix_transform.hpp
+/usr/local/include/glm/gtc/matrix_transform.hpp
+transform.inl
+/usr/local/include/glm/gtx/transform.inl
+
+/usr/local/include/glm/gtx/transform.inl
 
 /usr/local/include/glm/integer.hpp
 detail/func_integer.hpp

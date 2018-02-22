@@ -73,6 +73,14 @@ src/CMakeFiles/menger.dir/camera.cc.o
  /usr/local/include/glm/fwd.hpp
  /usr/local/include/glm/geometric.hpp
  /usr/local/include/glm/glm.hpp
+ /usr/local/include/glm/gtc/constants.hpp
+ /usr/local/include/glm/gtc/constants.inl
+ /usr/local/include/glm/gtc/matrix_transform.hpp
+ /usr/local/include/glm/gtc/matrix_transform.inl
+ /usr/local/include/glm/gtx/rotate_vector.hpp
+ /usr/local/include/glm/gtx/rotate_vector.inl
+ /usr/local/include/glm/gtx/transform.hpp
+ /usr/local/include/glm/gtx/transform.inl
  /usr/local/include/glm/integer.hpp
  /usr/local/include/glm/mat2x2.hpp
  /usr/local/include/glm/mat2x3.hpp
@@ -185,8 +193,12 @@ src/CMakeFiles/menger.dir/main.cc.o
  /usr/local/include/glm/gtc/vec1.inl
  /usr/local/include/glm/gtx/dual_quaternion.hpp
  /usr/local/include/glm/gtx/dual_quaternion.inl
+ /usr/local/include/glm/gtx/rotate_vector.hpp
+ /usr/local/include/glm/gtx/rotate_vector.inl
  /usr/local/include/glm/gtx/string_cast.hpp
  /usr/local/include/glm/gtx/string_cast.inl
+ /usr/local/include/glm/gtx/transform.hpp
+ /usr/local/include/glm/gtx/transform.inl
  /usr/local/include/glm/integer.hpp
  /usr/local/include/glm/mat2x2.hpp
  /usr/local/include/glm/mat2x3.hpp
