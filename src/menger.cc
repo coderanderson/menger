@@ -46,6 +46,8 @@ Menger::generate_geometry(std::vector<glm::vec4>& obj_vertices,
         generate_menger(obj_vertices, obj_faces, min, max);
         return;
     }
+    obj_vertices.clear();
+    obj_faces.clear();
 
     std::queue<glm::vec3> mins;
     mins.push(this->min);
