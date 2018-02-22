@@ -57,21 +57,17 @@ out vec4 vertex_position_world_;
 void main()
 {
 	int n = 0;
-	// normal = vec4(0.0, 0.0f, 1.0f, 0.0);
-	// vec3 A = gl_in[0].gl_Position.xyz;
-	// vec3 B = gl_in[1].gl_Position.xyz;
-	// vec3 C = gl_in[2].gl_Position.xyz;
-	// normal = vec4(normalize(cross(B-A, C-A)), 0.0);
 
-	mat4 view_inv = inverse(view);
-	vec4 A = view_inv * vec4(gl_in[0].gl_Position.xyz, 1.0f);
-	vec4 B = view_inv * vec4(gl_in[1].gl_Position.xyz, 1.0f);
-	vec4 C = view_inv * vec4(gl_in[2].gl_Position.xyz, 1.0f);
-	vec3 a = vec3(A.x, A.y, A.z);
-	vec3 b = vec3(B.x, B.y, B.z);
-	vec3 c = vec3(C.x, C.y, C.z);
-	normal = vec4(normalize(cross(b-a, c-a)), 1.0f);
-	//normal = vec4(0.0, 0.0, 1.0f, 0.0);
+	mat4 inv = inverse(view);
+
+	vec4 a = inv * vec4(gl_in[0].gl_Position.xyz, 1.0f);
+	vec4 b = inv * vec4(gl_in[1].gl_Position.xyz, 1.0f);
+	vec4 c = inv * vec4(gl_in[2].gl_Position.xyz, 1.0f);
+	
+	vec3 temp_a = vec3(a.x, a.y, a.z);
+	vec3 temp_b = vec3(b.x, b.y, b.z);
+	vec3 temp_c = vec3(c.x, c.y, c.z);
+	normal = vec4(normalize(cross(temp_b - temp_a, temp_c - temp_a)), 1.0f);
 
 	for (n = 0; n < gl_in.length(); n++) {
 		light_direction = vs_light_direction[n];

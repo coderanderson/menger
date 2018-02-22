@@ -39,6 +39,7 @@ Menger::generate_geometry(std::vector<glm::vec4>& obj_vertices,
                           std::vector<glm::uvec3>& obj_faces) const
 {
 
+    const float floor_pos = 2.0f;
     cout << "generate geometry called. level: " << nesting_level_ << endl;
     // obj_vertices.clear();
     // obj_faces.clear();
@@ -64,24 +65,24 @@ Menger::generate_geometry(std::vector<glm::vec4>& obj_vertices,
             mins.pop();
         	mins.push(vec);
             mins.push(vec + x);
-            mins.push(vec + 2.0f * x);
+            mins.push(vec + floor_pos * x);
             mins.push(vec + z);
-            mins.push(vec + z + 2.0f * x);
-            mins.push(vec + 2.0f * z);
-            mins.push(vec + 2.0f * z + x);
-            mins.push(vec + 2.0f * z + 2.0f * x);
+            mins.push(vec + z + floor_pos * x);
+            mins.push(vec + floor_pos * z);
+            mins.push(vec + floor_pos * z + x);
+            mins.push(vec + floor_pos * z + floor_pos * x);
             mins.push(vec + y);
-            mins.push(vec + y + 2.0f * z);
-            mins.push(vec + y + 2.0f * z + 2.0f * x);
-            mins.push(vec + y + 2.0f * x);
-            mins.push(vec + 2.0f * y);
-            mins.push(vec + 2.0f * y + x);
-            mins.push(vec + 2.0f * y + 2.0f * x);
-            mins.push(vec + 2.0f * y + z);
-            mins.push(vec + 2.0f * y + z + 2.0f * x);
-            mins.push(vec + 2.0f * y + 2.0f * z);
-            mins.push(vec + 2.0f * y + 2.0f * z + x);
-            mins.push(vec + 2.0f * y + 2.0f * z + 2.0f * x);
+            mins.push(vec + y + floor_pos * z);
+            mins.push(vec + y + floor_pos * z + floor_pos * x);
+            mins.push(vec + y + floor_pos * x);
+            mins.push(vec + floor_pos * y);
+            mins.push(vec + floor_pos * y + x);
+            mins.push(vec + floor_pos * y + floor_pos * x);
+            mins.push(vec + floor_pos* y + z);
+            mins.push(vec + floor_pos * y + z + floor_pos * x);
+            mins.push(vec + floor_pos* y + floor_pos * z);
+            mins.push(vec + floor_pos * y + floor_pos * z + x);
+            mins.push(vec + floor_pos * y + floor_pos * z + floor_pos * x);
 
         }
         // cout << "level " << i << ", cube number: " << mins.size() << endl;
