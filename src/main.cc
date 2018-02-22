@@ -142,13 +142,13 @@ KeyCallback(GLFWwindow* window,
 		g_camera.roll(1);
 	} else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
 		// FIXME: Left Right Up and Down
-		g_camera.translate(glm::vec2(-1, 0));
+		g_camera.trans(glm::vec2(-1, 0));
 	} else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
-		g_camera.translate(glm::vec2(1, 0));
+		g_camera.trans(glm::vec2(1, 0));
 	} else if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE) {
-		g_camera.translate(glm::vec2(0, -1));
+		g_camera.trans(glm::vec2(0, -1));
 	} else if (key == GLFW_KEY_UP && action != GLFW_RELEASE) {
-		g_camera.translate(glm::vec2(0, 1));
+		g_camera.trans(glm::vec2(0, 1));
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
 		// FIXME: FPS mode on/off
 	}
@@ -189,7 +189,7 @@ MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
 		} else if (g_current_button == GLFW_MOUSE_BUTTON_RIGHT || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
 			g_camera.zoom(10.0f * diff.y / window_height);
 		} else if (g_current_button == GLFW_MOUSE_BUTTON_MIDDLE || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
-			g_camera.translate(25.0f * glm::vec2(-diff.x / window_width, diff.y / window_height));
+			g_camera.trans(25.0f * glm::vec2(-diff.x / window_width, diff.y / window_height));
 		}
 	}
 
@@ -238,9 +238,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::uvec3> obj_faces;
 
         //FIXME: Create the geometry from a Menger object.
-        CreateTriangle(obj_vertices, obj_faces);
+        // CreateTriangle(obj_vertices, obj_faces);
 
-	g_menger->set_nesting_level(1);
+	g_menger->set_nesting_level(3);
+	g_menger->generate_geometry(obj_vertices, obj_faces);
 
 	glm::vec4 min_bounds = glm::vec4(std::numeric_limits<float>::max());
 	glm::vec4 max_bounds = glm::vec4(-std::numeric_limits<float>::max());

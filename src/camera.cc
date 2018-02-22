@@ -1,8 +1,7 @@
-#include <glm/gtx/rotate_vector.hpp>
 #include "camera.h"
 #include <iostream>
-
-using namespace std;
+#include <sstream>
+#include <glm/gtx/rotate_vector.hpp>
 
 namespace {
 	float pan_speed = 0.1f;
@@ -11,55 +10,51 @@ namespace {
 	float zoom_speed = 0.1f;
 };
 
-
-void Camera::yaw(float direct) {	// rotate | up_ direction
-	glm::vec3 focus = eye_ + camera_distance_ * look_;	// forcus not change
-	glm::mat4 rotateMat = glm::rotate(direct * rotation_speed, up_);
-	eye_ = glm::vec3(rotateMat * glm::vec4(eye_, 1));
-	look_ = glm::normalize(focus - eye_);
+void Camera::yaw(float dir) {
+	rotate *= glm::rotate(rotation_speed * dir, up_);
+	glm::vec3 eye(rotate * glm::vec4(eye_, 1));
+	look_ = glm::normalize(middle_ - eye);
 	right_ = glm::normalize(glm::cross(look_, up_));
-}
-
-void Camera::pitch(float direct) {	// rotate | right_ direction. right = cross(look_, up_)
-	glm::vec3 focus = eye_ + camera_distance_ * look_;
-	glm::mat4 rotateMat = glm::rotate(direct * rotation_speed, right_);
-	eye_ = glm::vec3(rotateMat * glm::vec4(eye_, 1));
-	look_ = glm::normalize(focus - eye_);
 	up_ = glm::normalize(glm::cross(right_, look_));
 }
 
-void Camera::roll(float direct) {	// rotate | look_ direction
-	glm::mat4 rotateMat = glm::rotate(direct * roll_speed, look_);
-	up_ = glm::normalize(glm::vec3(rotateMat * glm::vec4(up_, 0.0f)));
-	right_ = glm::normalize(glm::vec3(rotateMat * glm::vec4(right_, 0.0f)));
+void Camera::pitch(float dir) {
+	rotate = glm::rotate(rotation_speed*dir, right_) * rotate;
+	glm::vec3 eye(rotate * glm::vec4(eye_, 1));
+	look_ = glm::normalize(middle_ - eye);
+	right_ = glm::normalize(glm::cross(look_, up_));
+	up_ = glm::normalize(glm::cross(right_, look_));
 }
 
-void Camera::zoom(float direct) {
-	camera_distance_ += direct * zoom_speed;
+void Camera::roll(float dir) {
+	glm::mat4 roll_rotate = glm::rotate(dir * roll_speed, look_);
+	right_ = glm::normalize(glm::vec3(roll_rotate * glm::vec4(right_, 0.0f)));
+	up_ = glm::normalize(glm::vec3(roll_rotate * glm::vec4(up_, 0.0f)));
+}
+
+void Camera::trans(glm::vec2 dir) {
+	translate *= glm::translate((dir.y * up_ + dir.x * right_) * pan_speed);
+}
+
+void Camera::zoom(float dir) {
+	camera_distance_ += zoom_speed * dir;
 	eye_ = glm::vec3(0.0f, 0.0f, camera_distance_);
 }
 
-void Camera::translate(glm::vec2 direct) {
-	glm::mat4 translateMat = glm::translate((direct.x * right_ + direct.y * up_) * pan_speed);
-	eye_ = glm::vec3(translateMat * glm::vec4(eye_, 1));
-}
+glm::mat4 Camera::get_view_matrix() const {
+	glm::vec3 newEye(translate * rotate * glm::vec4(eye_, 1));
+	glm::vec3 newmiddle(translate * rotate * glm::vec4(middle_, 1));
 
-
-// FIXME: Calculate the view matrix
-glm::mat4 Camera::get_view_matrix() const
-{
-	glm::vec3 Z = - glm::normalize(look_);
-	glm::vec3 X = glm::normalize(glm::cross(up_, Z));
+	glm::vec3 Z = glm::normalize(newEye - newmiddle);
+	glm::vec3 X = glm::cross(up_, Z);
 	glm::vec3 Y = glm::normalize(glm::cross(Z, X));
+	X = glm::normalize(X);
 
-	glm::mat4 res(1.0f);
-	res[0] = glm::vec4(X.x, Y.x, Z.x, 0);
-	res[1] = glm::vec4(X.y, Y.y, Z.y, 0);
-	res[2] = glm::vec4(X.z, Y.z, Z.z, 0);
-	res[3] = glm::vec4(glm::dot(-X, eye_), glm::dot(-Y, eye_), glm::dot(-Z, eye_), 1);
-	for(int i = 0; i < 4; i++) {
-		cout << res[i].x << ", " << res[i].y << ", " << res[i].z << ", " << 0 << endl;
-	}
-	cout << "\n" << endl;
-	return res;
+	glm::mat4 eye(1.0f);
+	eye[0] = glm::vec4(X.x, Y.x, Z.x, 0);
+	eye[1] = glm::vec4(X.y, Y.y, Z.y, 0);
+	eye[2] = glm::vec4(X.z, Y.z, Z.z, 0);
+	eye[3] = glm::vec4(glm::dot(-X, newEye), glm::dot(-Y, newEye), glm::dot(-Z, newEye), 1);
+
+	return eye;
 }
