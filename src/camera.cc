@@ -1,5 +1,8 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include "camera.h"
+#include <iostream>
+
+using namespace std;
 
 namespace {
 	float pan_speed = 0.1f;
@@ -45,7 +48,7 @@ void Camera::translate(glm::vec2 direct) {
 // FIXME: Calculate the view matrix
 glm::mat4 Camera::get_view_matrix() const
 {
-	glm::vec3 Z = look_;
+	glm::vec3 Z = - glm::normalize(look_);
 	glm::vec3 X = glm::normalize(glm::cross(up_, Z));
 	glm::vec3 Y = glm::normalize(glm::cross(Z, X));
 
@@ -54,6 +57,9 @@ glm::mat4 Camera::get_view_matrix() const
 	res[1] = glm::vec4(X.y, Y.y, Z.y, 0);
 	res[2] = glm::vec4(X.z, Y.z, Z.z, 0);
 	res[3] = glm::vec4(glm::dot(-X, eye_), glm::dot(-Y, eye_), glm::dot(-Z, eye_), 1);
-
+	for(int i = 0; i < 4; i++) {
+		cout << res[i].x << ", " << res[i].y << ", " << res[i].z << ", " << 0 << endl;
+	}
+	cout << "\n" << endl;
 	return res;
 }
