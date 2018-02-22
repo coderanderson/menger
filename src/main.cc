@@ -133,24 +133,25 @@ KeyCallback(GLFWwindow* window,
 		// FIXME: save geometry to OBJ
 	} else if (key == GLFW_KEY_W && action != GLFW_RELEASE) {
 		// FIXME: WASD
-		g_camera.zoom(1);
+		g_camera.keyZoom(1);
 	} else if (key == GLFW_KEY_S && action != GLFW_RELEASE) {
-		g_camera.zoom(-1);
+		g_camera.keyZoom(-1);
 	} else if (key == GLFW_KEY_A && action != GLFW_RELEASE) {
-		g_camera.roll(-1);
+		g_camera.moveHorizontal(-1);
 	} else if (key == GLFW_KEY_D && action != GLFW_RELEASE) {
-		g_camera.roll(1);
+		g_camera.moveHorizontal(1);
 	} else if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE) {
 		// FIXME: Left Right Up and Down
-		g_camera.trans(glm::vec2(-1, 0));
+		g_camera.roll(-1);
 	} else if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE) {
-		g_camera.trans(glm::vec2(1, 0));
+		g_camera.roll(1);
 	} else if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE) {
-		g_camera.trans(glm::vec2(0, -1));
+		g_camera.moveVertical(-1);
 	} else if (key == GLFW_KEY_UP && action != GLFW_RELEASE) {
-		g_camera.trans(glm::vec2(0, 1));
+		g_camera.moveVertical(1);
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
 		// FIXME: FPS mode on/off
+		g_camera.toggleFPS();
 	}
 	if (!g_menger)
 		return ; // 0-4 only available in Menger mode.
@@ -171,37 +172,56 @@ KeyCallback(GLFWwindow* window,
 
 int g_current_button;
 bool g_mouse_pressed;
+bool mouse_clicked = false;
 
-bool g_prev_pressed;
-glm::vec2 prev(0.0f, 0.0f);
 
-void
-MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
+
+void MousePosCallback(GLFWwindow* window, double mouse_x, double mouse_y)
 {
-
-	glm::vec2 mouse(mouse_x, mouse_y);
-	glm::vec2 diff = mouse - prev;
-
-	if (g_mouse_pressed && g_prev_pressed) {
-		if (g_current_button == GLFW_MOUSE_BUTTON_LEFT) {
-			g_camera.pitch((180.0f / M_PI) * -diff.y / window_width);
-			g_camera.yaw((180.0f /  M_PI) * -diff.x / window_height);
-		} else if (g_current_button == GLFW_MOUSE_BUTTON_RIGHT || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
-			g_camera.zoom(10.0f * diff.y / window_height);
-		} else if (g_current_button == GLFW_MOUSE_BUTTON_MIDDLE || (g_current_button == GLFW_MOUSE_BUTTON_LEFT)) {
-			g_camera.trans(25.0f * glm::vec2(-diff.x / window_width, diff.y / window_height));
-		}
+	if(!g_mouse_pressed)
+		return;
+	if(mouse_clicked) {
+		g_camera.setMouseCoord(mouse_x, mouse_y);
+		mouse_clicked = false;
 	}
+	if(g_current_button == GLFW_MOUSE_BUTTON_LEFT) {
+		g_camera.rotate(mouse_x, mouse_y);
+	} 
+	else if(g_current_button == GLFW_MOUSE_BUTTON_RIGHT) {
+		g_camera.mouseZoom(mouse_y);
+	}
+}
 
-	prev = glm::vec2(mouse_x, mouse_y);
-	g_prev_pressed = g_mouse_pressed;
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	mouse_clicked = true;
+	g_mouse_pressed = (action == GLFW_PRESS);
+	g_current_button = button;
 }
 
 void
-MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+make_floor(std::vector<glm::vec4>& floor_vertices,
+					 std::vector<glm::vec4>& floor_vtx_normals,
+					 std::vector<glm::uvec3>& floor_faces) 
 {
-	g_mouse_pressed = (action == GLFW_PRESS);
-	g_current_button = button;
+	float max = 1000.0f;
+	float min = -1000.0f;
+
+	floor_vertices.push_back(glm::vec4(min, -2.0f, min, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_vertices.push_back(glm::vec4(min, -2.0f, max, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_vertices.push_back(glm::vec4(max, -2.0f, min, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_faces.push_back(glm::uvec3(0, 1, 2));
+
+	floor_vertices.push_back(glm::vec4(max, -2.0f, max, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_vertices.push_back(glm::vec4(min, -2.0f, max, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_vertices.push_back(glm::vec4(max, -2.0f, min, 1.0f));
+	floor_vtx_normals.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	floor_faces.push_back(glm::uvec3(3, 4, 5));
 }
 
 int main(int argc, char* argv[])
@@ -238,7 +258,7 @@ int main(int argc, char* argv[])
 	std::vector<glm::uvec3> obj_faces;
 
         //FIXME: Create the geometry from a Menger object.
-        // CreateTriangle(obj_vertices, obj_faces);
+        CreateTriangle(obj_vertices, obj_faces);
 
 	g_menger->set_nesting_level(3);
 	g_menger->generate_geometry(obj_vertices, obj_faces);
