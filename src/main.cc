@@ -241,8 +241,8 @@ make_floor(std::vector<glm::vec4>& floor_vertices,
 	floor_vertices.push_back(glm::vec4(max, -2.0f, max, 1.0f));
 	floor_vertices.push_back(glm::vec4(max, -2.0f, min, 1.0f));
 
-	floor_faces.push_back(glm::uvec3(0, 1, 3));
-	floor_faces.push_back(glm::uvec3(1, 2, 3));
+	floor_faces.push_back(glm::uvec3(0, 1, 2));
+	floor_faces.push_back(glm::uvec3(3, 4, 5));
 }
 
 int main(int argc, char* argv[])

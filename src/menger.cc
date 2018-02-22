@@ -105,36 +105,33 @@ Menger::generate_menger(std::vector<glm::vec4> &obj_vertices,
 
 	unsigned long v = obj_vertices.size();
 	obj_vertices.push_back(glm::vec4(min.x, min.y, min.z, 1.0f));
-	obj_vertices.push_back(glm::vec4(min.x, min.y, max.z, 1.0f));
-	obj_vertices.push_back(glm::vec4(min.x, max.y, min.z, 1.0f));
-	obj_vertices.push_back(glm::vec4(min.x, max.y, max.z, 1.0f));
-
 	obj_vertices.push_back(glm::vec4(max.x, min.y, min.z, 1.0f));
-	obj_vertices.push_back(glm::vec4(max.x, min.y, max.z, 1.0f));
 	obj_vertices.push_back(glm::vec4(max.x, max.y, min.z, 1.0f));
+	obj_vertices.push_back(glm::vec4(min.x, max.y, min.z, 1.0f));
+	obj_vertices.push_back(glm::vec4(min.x, min.y, max.z, 1.0f));
+	obj_vertices.push_back(glm::vec4(max.x, min.y, max.z, 1.0f));
 	obj_vertices.push_back(glm::vec4(max.x, max.y, max.z, 1.0f));
+	obj_vertices.push_back(glm::vec4(min.x, max.y, max.z, 1.0f));
 	
 	
-    obj_faces.push_back(glm::uvec3(v, v + 1, v + 2));
-    obj_faces.push_back(glm::uvec3(v, v + 2, v + 3));
-
-    obj_faces.push_back(glm::uvec3(v, v + 1, v + 5));
-    obj_faces.push_back(glm::uvec3(v, v + 4, v + 5));
-
-    obj_faces.push_back(glm::uvec3(v, v + 4, v + 6));
-    obj_faces.push_back(glm::uvec3(v, v + 2, v + 6));
-
-    obj_faces.push_back(glm::uvec3(v, v + 1, v + 2));
-    obj_faces.push_back(glm::uvec3(v, v + 2, v + 3));
-
-    obj_faces.push_back(glm::uvec3(v + 7, v + 5, v + 1));
-    obj_faces.push_back(glm::uvec3(v + 7, v + 3, v + 1));
-
-    obj_faces.push_back(glm::uvec3(v + 7, v + 5, v + 4));
-    obj_faces.push_back(glm::uvec3(v + 7, v + 6, v + 4));
-
-    obj_faces.push_back(glm::uvec3(v + 7, v + 6, v + 2));
-    obj_faces.push_back(glm::uvec3(v + 7, v + 3, v + 2));
+    //bottom
+	obj_faces.push_back(glm::uvec3(v, v+2, v+1));
+	obj_faces.push_back(glm::uvec3(v, v+3, v+2));
+	//front
+	obj_faces.push_back(glm::uvec3(v+1, v+2, v+6));
+	obj_faces.push_back(glm::uvec3(v+1, v+6, v+5));
+	//top
+	obj_faces.push_back(glm::uvec3(v+4, v+6, v+7));
+	obj_faces.push_back(glm::uvec3(v+4, v+5, v+6));
+	//back
+	obj_faces.push_back(glm::uvec3(v, v+4, v+7));
+	obj_faces.push_back(glm::uvec3(v, v+7, v+3));
+	//right
+	obj_faces.push_back(glm::uvec3(v+3, v+7, v+6));
+	obj_faces.push_back(glm::uvec3(v+3, v+6, v+2));
+	//left
+	obj_faces.push_back(glm::uvec3(v, v+5, v+4));
+	obj_faces.push_back(glm::uvec3(v, v+1, v+5));
 
    
 
