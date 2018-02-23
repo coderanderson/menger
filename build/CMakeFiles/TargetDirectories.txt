@@ -1,6 +1,0 @@
-/Users/dranderson/Downloads/menger/build/CMakeFiles/rebuild_cache.dir
-/Users/dranderson/Downloads/menger/build/CMakeFiles/edit_cache.dir
-/Users/dranderson/Downloads/menger/build/CMakeFiles/utgraphicsutil.dir
-/Users/dranderson/Downloads/menger/build/src/CMakeFiles/rebuild_cache.dir
-/Users/dranderson/Downloads/menger/build/src/CMakeFiles/edit_cache.dir
-/Users/dranderson/Downloads/menger/build/src/CMakeFiles/menger.dir
