@@ -46,6 +46,8 @@ void main()
 
 const char* geometry_shader =
 R"zzz(#version 330 core
+
+
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 uniform mat4 view;
@@ -55,6 +57,7 @@ in vec4 vertex_position_world[];
 flat out vec4 normal;
 out vec4 light_direction;
 out vec4 vertex_position_world_;
+out vec3 v_bycentric;
 void main()
 {
 	int n = 0;
@@ -74,6 +77,15 @@ void main()
 		light_direction = vs_light_direction[n];
 		gl_Position = projection * gl_in[n].gl_Position;
 		vertex_position_world_ = vertex_position_world[n];
+		if(n == 0) {
+			v_bycentric = vec3(1, 0, 0);
+		}
+		else if(n == 1) {
+			v_bycentric = vec3(0, 1, 0);
+		}
+		else {
+			v_bycentric = vec3(0, 0, 1);
+		}
 		EmitVertex();
 	}
 	EndPrimitive();
@@ -82,7 +94,9 @@ void main()
 
 const char* fragment_shader =
 R"zzz(#version 330 core
+
 flat in vec4 normal;
+
 in vec4 light_direction;
 out vec4 fragment_color;
 void main()
@@ -91,6 +105,9 @@ void main()
 	float dot_nl = dot(normalize(light_direction), normalize(normal));
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
+	
+
+
 }
 )zzz";
 
@@ -98,6 +115,10 @@ void main()
 const char* floor_fragment_shader =
 R"zzz(#version 330 core
 flat in vec4 normal;
+
+uniform float wireframeThresh;
+
+in vec3 v_bycentric;
 in vec4 light_direction;
 in vec4 vertex_position_world_;
 out vec4 fragment_color;
@@ -112,11 +133,20 @@ void main()
 	float dot_nl = dot(normalize(light_direction), vec4(0.0, 0.0f, 1.0f, 0.0));
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
+
+	float minBc = min(min(v_bycentric.x, v_bycentric.y), v_bycentric.z);
+	
+	if(minBc < wireframeThresh) {
+		fragment_color = vec4(0, 128, 0, 1.0);
+	}
+
 }
 )zzz";
 
 std::vector<glm::vec4> obj_vertices;
 std::vector<glm::uvec3> obj_faces;
+
+float wireframeThresh = 0.0f;
 
 void
 CreateTriangle(std::vector<glm::vec4>& vertices,
@@ -129,6 +159,15 @@ CreateTriangle(std::vector<glm::vec4>& vertices,
 	indices.push_back(glm::uvec3(0, 1, 2));
 }
 
+void 
+toggleWireframe() {
+	if(wireframeThresh == 0.0f) {
+		wireframeThresh = 0.001f;
+	}
+	else {
+		wireframeThresh = 0.0f;
+	}
+}
 
 // FIXME: Save geometry to OBJ file
 void
@@ -196,7 +235,12 @@ KeyCallback(GLFWwindow* window,
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
 		// FIXME: FPS mode on/off
 		g_camera.toggleFPS();
+	} else if(key ==  GLFW_KEY_F && action != GLFW_RELEASE) {
+		toggleWireframe();
 	}
+
+
+
 	if (!g_menger)
 		return ; // 0-4 only available in Menger mode.
 	if (key == GLFW_KEY_0 && action != GLFW_RELEASE) {
@@ -258,6 +302,8 @@ make_floor(std::vector<glm::vec4>& floor_vertices,
 	floor_faces.push_back(glm::uvec3(0, 1, 2));
 	floor_faces.push_back(glm::uvec3(3, 4, 5));
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -402,7 +448,7 @@ int main(int argc, char* argv[])
 
 	// Get the uniform locations.
 	GLint projection_matrix_location = 0;
-	CHECK_GL_ERROR(projection_matrix_location =
+	CHECK_GL_ERROR(projection_matrix_location = 
 			glGetUniformLocation(program_id, "projection"));
 	GLint view_matrix_location = 0;
 	CHECK_GL_ERROR(view_matrix_location =
@@ -449,6 +495,10 @@ int main(int argc, char* argv[])
 	GLint floor_light_position_location = 0;
 	CHECK_GL_ERROR(floor_light_position_location =
 			glGetUniformLocation(floor_program_id, "light_position"));
+	GLint floor_wireframe_thresh_location = 0;
+	CHECK_GL_ERROR(floor_wireframe_thresh_location =
+			glGetUniformLocation(floor_program_id, "wireframeThresh"));
+
 
 	glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
 	float aspect = 0.0f;
@@ -519,6 +569,8 @@ int main(int argc, char* argv[])
 		CHECK_GL_ERROR(glUniformMatrix4fv(floor_view_matrix_location, 1, GL_FALSE,
 					&view_matrix[0][0]));
 		CHECK_GL_ERROR(glUniform4fv(floor_light_position_location, 1, &light_position[0]));
+
+		CHECK_GL_ERROR(glUniform1f(floor_wireframe_thresh_location, wireframeThresh));
 
 		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, floor_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
