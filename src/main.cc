@@ -30,7 +30,7 @@ GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptor
 // C++ 11 String Literal
 // See http://en.cppreference.com/w/cpp/language/string_literal
 const char* vertex_shader =
-R"zzz(#version 330 core
+R"zzz(#version 410 core
 in vec4 vertex_position;
 uniform mat4 view;
 uniform vec4 light_position;
@@ -44,8 +44,43 @@ void main()
 }
 )zzz";
 
+
+
+
+const char* tessControlShader =
+R"zzz(#version 410 core
+layout (vertices = 3) out;
+void main(void) {
+	if(gl_InvocationID == 0) {
+		gl_TessLevelInner[0] = 7.0;
+		gl_TessLevelOuter[0] = 2.0;
+		gl_TessLevelOuter[1] = 3.0;
+		gl_TessLevelOuter[2] = 7.0;
+	}
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}
+
+)zzz";
+
+
+
+
+const char* tessEvaluationShader =
+R"zzz(#version 410 core
+layout(triangles, equal_spacing, cw) in;
+void main(void) {
+	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position
+					+ gl_TessCoord.y * gl_in[1].gl_Position
+					+ gl_TessCoord.z * gl_in[2].gl_Position);
+}
+
+)zzz";
+
+
+
+
 const char* geometry_shader =
-R"zzz(#version 330 core
+R"zzz(#version 410 core
 
 
 layout (triangles) in;
@@ -92,8 +127,12 @@ void main()
 }
 )zzz";
 
+
+
+
+
 const char* fragment_shader =
-R"zzz(#version 330 core
+R"zzz(#version 410 core
 
 flat in vec4 normal;
 
@@ -113,7 +152,7 @@ void main()
 
 // FIXME: Implement shader effects with an alternative shader.
 const char* floor_fragment_shader =
-R"zzz(#version 330 core
+R"zzz(#version 410 core
 flat in vec4 normal;
 
 uniform float wireframeThresh;
@@ -135,7 +174,6 @@ void main()
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
 
 	float minBc = min(min(v_bycentric.x, v_bycentric.y), v_bycentric.z);
-	
 	if(minBc < wireframeThresh) {
 		fragment_color = vec4(0, 128, 0, 1.0);
 	}
@@ -417,6 +455,29 @@ int main(int argc, char* argv[])
 	glCompileShader(vertex_shader_id);
 	CHECK_GL_SHADER_ERROR(vertex_shader_id);
 
+
+	/*---------------------our codes ---------------------------*/
+	// Setup tessllation control shader
+	GLuint tess_control_shader_id = 0;
+	const char* tess_control_source_pointer = tessControlShader;
+	CHECK_GL_ERROR(tess_control_shader_id = glCreateShader(GL_TESS_CONTROL_SHADER));
+	CHECK_GL_ERROR(glShaderSource(tess_control_shader_id, 1, &tess_control_source_pointer, nullptr));
+	glCompileShader(tess_control_shader_id);
+	CHECK_GL_SHADER_ERROR(tess_control_shader_id);
+
+
+
+	// Setup tessllation evaluation shader
+	GLuint tess_eval_shader_id = 0;
+	const char* tess_eval_source_pointer = tessEvaluationShader;
+	CHECK_GL_ERROR(tess_eval_shader_id = glCreateShader(GL_TESS_EVALUATION_SHADER));
+	CHECK_GL_ERROR(glShaderSource(tess_eval_shader_id, 1, &tess_eval_source_pointer, nullptr));
+	glCompileShader(tess_eval_shader_id);
+	CHECK_GL_SHADER_ERROR(tess_eval_shader_id);
+
+
+
+
 	// Setup geometry shader.
 	GLuint geometry_shader_id = 0;
 	const char* geometry_source_pointer = geometry_shader;
@@ -476,6 +537,11 @@ int main(int argc, char* argv[])
 	GLuint floor_program_id = 0;
 	CHECK_GL_ERROR(floor_program_id = glCreateProgram());
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, vertex_shader_id));
+
+	/* our shaders attached here */
+	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_control_shader_id));
+	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_eval_shader_id));
+
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, geometry_shader_id));
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, floor_fragment_shader_id));
 
@@ -500,7 +566,8 @@ int main(int argc, char* argv[])
 			glGetUniformLocation(floor_program_id, "wireframeThresh"));
 
 
-	glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
+	// glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
+	glm::vec4 light_position = glm::vec4(-10.0f, 10.0f, 0.0f, 1.0f);
 	float aspect = 0.0f;
 	float theta = 0.0f;
 	while (!glfwWindowShouldClose(window)) {
@@ -572,7 +639,7 @@ int main(int argc, char* argv[])
 
 		CHECK_GL_ERROR(glUniform1f(floor_wireframe_thresh_location, wireframeThresh));
 
-		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, floor_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 
 		// Poll and swap.
