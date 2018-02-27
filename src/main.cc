@@ -34,13 +34,13 @@ R"zzz(#version 410 core
 in vec4 vertex_position;
 uniform mat4 view;
 uniform vec4 light_position;
-out vec4 vs_light_direction;
-out vec4 vertex_position_world;
+out vec4 vs_light_direction_0;
+out vec4 vertex_position_world_0;
 void main()
 {
 	gl_Position = view * vertex_position;
-	vs_light_direction = -gl_Position + view * light_position;
-	vertex_position_world = vertex_position;
+	vs_light_direction_0 = -gl_Position + view * light_position;
+	vertex_position_world_0 = vertex_position;
 }
 )zzz";
 
@@ -49,6 +49,12 @@ void main()
 
 const char* tessControlShader =
 R"zzz(#version 410 core
+
+in vec4 vs_light_direction_0[];
+in vec4 vertex_position_world_0[];
+patch out vec4 vs_light_direction_1;
+patch out vec4 vertex_position_world_1;
+
 layout (vertices = 3) out;
 void main(void) {
 	if(gl_InvocationID == 0) {
@@ -58,6 +64,8 @@ void main(void) {
 		gl_TessLevelOuter[2] = 7.0;
 	}
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	vs_light_direction_1 = vs_light_direction_0[gl_InvocationID];
+	vertex_position_world_1 = vertex_position_world_0[gl_InvocationID];
 }
 
 )zzz";
@@ -67,11 +75,29 @@ void main(void) {
 
 const char* tessEvaluationShader =
 R"zzz(#version 410 core
+patch in vec4 vs_light_direction_1;
+patch in vec4 vertex_position_world_1;
+
+out vec4 vs_light_direction;
+out vec4 vertex_position_world;
+
+
 layout(triangles, equal_spacing, cw) in;
 void main(void) {
 	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position
 					+ gl_TessCoord.y * gl_in[1].gl_Position
 					+ gl_TessCoord.z * gl_in[2].gl_Position);
+	vs_light_direction = vs_light_direction_1;
+	vertex_position_world = vertex_position_world_1;
+
+	// int i = 0;
+	// for(i = 0; i < 4; i++) {
+	// 	vs_light_direction[i] = vs_light_direction_1[i];
+	// }
+	// for(i = 0; i < 4; i++) {
+	// 	vertex_position_world[i] = vertex_position_world_1[i];
+	// }
+
 }
 
 )zzz";
