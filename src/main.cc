@@ -52,8 +52,8 @@ R"zzz(#version 410 core
 
 in vec4 vs_light_direction_0[];
 in vec4 vertex_position_world_0[];
-patch out vec4 vs_light_direction_1;
-patch out vec4 vertex_position_world_1;
+out vec4 vs_light_direction_1[];
+out vec4 vertex_position_world_1[];
 
 layout (vertices = 3) out;
 void main(void) {
@@ -64,8 +64,8 @@ void main(void) {
 		gl_TessLevelOuter[2] = 7.0;
 	}
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	vs_light_direction_1 = vs_light_direction_0[gl_InvocationID];
-	vertex_position_world_1 = vertex_position_world_0[gl_InvocationID];
+	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
+	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
 }
 
 )zzz";
@@ -75,8 +75,8 @@ void main(void) {
 
 const char* tessEvaluationShader =
 R"zzz(#version 410 core
-patch in vec4 vs_light_direction_1;
-patch in vec4 vertex_position_world_1;
+in vec4 vs_light_direction_1[];
+in vec4 vertex_position_world_1[];
 
 out vec4 vs_light_direction;
 out vec4 vertex_position_world;
@@ -87,17 +87,14 @@ void main(void) {
 	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position
 					+ gl_TessCoord.y * gl_in[1].gl_Position
 					+ gl_TessCoord.z * gl_in[2].gl_Position);
-	vs_light_direction = vs_light_direction_1;
-	vertex_position_world = vertex_position_world_1;
 
-	// int i = 0;
-	// for(i = 0; i < 4; i++) {
-	// 	vs_light_direction[i] = vs_light_direction_1[i];
-	// }
-	// for(i = 0; i < 4; i++) {
-	// 	vertex_position_world[i] = vertex_position_world_1[i];
-	// }
+	vs_light_direction = (gl_TessCoord.x * vs_light_direction_1[0]
+					+ gl_TessCoord.y * vs_light_direction_1[1]
+					+ gl_TessCoord.z * vs_light_direction_1[2]);
 
+	vertex_position_world = (gl_TessCoord.x * vertex_position_world_1[0]
+					+ gl_TessCoord.y * vertex_position_world_1[1]
+					+ gl_TessCoord.z * vertex_position_world_1[2]);
 }
 
 )zzz";
@@ -167,7 +164,7 @@ out vec4 fragment_color;
 void main()
 {
 	vec4 color = abs(normal) + vec4(0.0, 0.0, 0.0, 1.0);
-	float dot_nl = dot(normalize(light_direction), normalize(normal));
+	float dot_nl = dot(normalize(light_direction), normal);
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
 	
@@ -190,19 +187,23 @@ out vec4 fragment_color;
 void main()
 {
 	vec4 color;
-	if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2) == 0) {
+	if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2.0) == 0) {
 		color = vec4(0.0, 0.0, 0.0, 1.0);
 	} else {
 		color = vec4(1.0, 1.0, 1.0, 1.0);
 	}
-	float dot_nl = dot(normalize(light_direction), vec4(0.0, 0.0f, 1.0f, 0.0));
+
+	float dot_nl = dot(normalize(light_direction), normal);
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
 
 	float minBc = min(min(v_bycentric.x, v_bycentric.y), v_bycentric.z);
 	if(minBc < wireframeThresh) {
-		fragment_color = vec4(0, 128, 0, 1.0);
+		fragment_color = vec4(0.0, 256.0, 0.0, 1.0);
 	}
+
+	
+	
 
 }
 )zzz";
