@@ -52,16 +52,20 @@ R"zzz(#version 410 core
 
 in vec4 vs_light_direction_0[];
 in vec4 vertex_position_world_0[];
+uniform int innerLevel;
+uniform int outerLevel;
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
+
+
 
 layout (vertices = 3) out;
 void main(void) {
 	if(gl_InvocationID == 0) {
-		gl_TessLevelInner[0] = 7.0;
-		gl_TessLevelOuter[0] = 2.0;
-		gl_TessLevelOuter[1] = 3.0;
-		gl_TessLevelOuter[2] = 7.0;
+		gl_TessLevelInner[0] = 1.0 + innerLevel;
+		gl_TessLevelOuter[0] = 1.0 + outerLevel;
+		gl_TessLevelOuter[1] = 1.0 + outerLevel;
+		gl_TessLevelOuter[2] = 1.0 + outerLevel;
 	}
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
@@ -212,6 +216,7 @@ std::vector<glm::vec4> obj_vertices;
 std::vector<glm::uvec3> obj_faces;
 
 float wireframeThresh = 0.0f;
+int innerLevel = 0, outerLevel = 0;
 
 void
 CreateTriangle(std::vector<glm::vec4>& vertices,
@@ -302,7 +307,16 @@ KeyCallback(GLFWwindow* window,
 		g_camera.toggleFPS();
 	} else if(key ==  GLFW_KEY_F && action != GLFW_RELEASE) {
 		toggleWireframe();
+	} else if(key == GLFW_KEY_MINUS) {
+		outerLevel = std::max(0, outerLevel - 1);
+	} else if(key == GLFW_KEY_EQUAL) {
+		outerLevel = outerLevel + 1;
+	} else if(key == GLFW_KEY_COMMA) {
+		innerLevel = std::max(0, innerLevel - 1);
+	} else if(key == GLFW_KEY_PERIOD) {
+		innerLevel = innerLevel + 1;
 	}
+
 
 
 
@@ -591,6 +605,12 @@ int main(int argc, char* argv[])
 	GLint floor_wireframe_thresh_location = 0;
 	CHECK_GL_ERROR(floor_wireframe_thresh_location =
 			glGetUniformLocation(floor_program_id, "wireframeThresh"));
+	GLint tess_inner_level_location = 0;
+	CHECK_GL_ERROR(tess_inner_level_location =
+			glGetUniformLocation(floor_program_id, "innerLevel"));
+	GLint tess_outer_level_location = 0;
+	CHECK_GL_ERROR(tess_outer_level_location =
+			glGetUniformLocation(floor_program_id, "outerLevel"));
 
 
 	// glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
@@ -665,6 +685,10 @@ int main(int argc, char* argv[])
 		CHECK_GL_ERROR(glUniform4fv(floor_light_position_location, 1, &light_position[0]));
 
 		CHECK_GL_ERROR(glUniform1f(floor_wireframe_thresh_location, wireframeThresh));
+
+		CHECK_GL_ERROR(glUniform1i(tess_inner_level_location, innerLevel));
+
+		CHECK_GL_ERROR(glUniform1i(tess_outer_level_location, outerLevel));
 
 		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
