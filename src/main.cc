@@ -47,7 +47,7 @@ void main()
 
 
 
-const char* tessControlShader =
+const char* triangleTessControlShader =
 R"zzz(#version 410 core
 
 in vec4 vs_light_direction_0[];
@@ -75,9 +75,36 @@ void main(void) {
 )zzz";
 
 
+const char* quadTessControlShader =
+R"zzz(#version 410 core
+
+in vec4 vs_light_direction_0[];
+in vec4 vertex_position_world_0[];
+uniform int innerLevel;
+uniform int outerLevel;
+out vec4 vs_light_direction_1[];
+out vec4 vertex_position_world_1[];
 
 
-const char* tessEvaluationShader =
+layout (vertices = 3) out;
+void main(void) {
+	if(gl_InvocationID == 0) {
+		gl_TessLevelInner[0] = 1.0 + innerLevel;
+		gl_TessLevelInner[1] = 1.0 + innerLevel;
+		gl_TessLevelOuter[0] = 1.0 + outerLevel;
+		gl_TessLevelOuter[1] = 1.0 + outerLevel;
+		gl_TessLevelOuter[2] = 1.0 + outerLevel;
+		gl_TessLevelOuter[3] = 1.0 + outerLevel;
+	}
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
+	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
+}
+
+)zzz";
+
+
+const char* triangleTessEvaluationShader =
 R"zzz(#version 410 core
 in vec4 vs_light_direction_1[];
 in vec4 vertex_position_world_1[];
@@ -104,6 +131,32 @@ void main(void) {
 )zzz";
 
 
+const char* quadTessEvaluationShader =
+R"zzz(#version 410 core
+in vec4 vs_light_direction_1[];
+in vec4 vertex_position_world_1[];
+
+out vec4 vs_light_direction;
+out vec4 vertex_position_world;
+
+
+layout(quads, equal_spacing, cw) in;
+void main(void) {
+	vec4 p1 = mix(gl_in[1].gl_Position, gl_in[0].gl_Position, gl_TessCoord.x);
+	vec4 p2 = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, gl_TessCoord.x);
+	gl_Position = mix(p1, p2, gl_TessCoord.y);
+
+	vec4 light_dir1 = mix(vs_light_direction_1[1], vs_light_direction_1[0], gl_TessCoord.x);
+	vec4 light_dir2 = mix(vs_light_direction_1[2], vs_light_direction_1[3], gl_TessCoord.x);
+	vs_light_direction = mix(light_dir1, light_dir2, gl_TessCoord.y);
+
+
+	vec4 vertex_pos1 = mix(vertex_position_world_1[1], vertex_position_world_1[0], gl_TessCoord.x);
+	vec4 vertex_pos2 = mix(vertex_position_world_1[2], vertex_position_world_1[3], gl_TessCoord.x);
+	vertex_position_world = mix(vertex_pos1, vertex_pos2, gl_TessCoord.y);
+}
+
+)zzz";
 
 
 const char* geometry_shader =
@@ -366,8 +419,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	g_current_button = button;
 }
 
-void
-make_floor(std::vector<glm::vec4>& floor_vertices,
+void make_floor(std::vector<glm::vec4>& floor_vertices,
 					 std::vector<glm::uvec3>& floor_faces) 
 {
 	float max = 1000.0f;
@@ -380,6 +432,31 @@ make_floor(std::vector<glm::vec4>& floor_vertices,
 
 	floor_faces.push_back(glm::uvec3(0, 1, 2));
 	floor_faces.push_back(glm::uvec3(3, 4, 5));
+}
+
+void make_ocean(std::vector<glm::vec4>& ocean_vertices,
+					 std::vector<glm::uvec4>& ocean_faces) {
+	float min = -20.0f, max = 20.0f;
+	float step = (max - min) / 16.0;
+	// push vertices
+	for(int x = 0; x <= 16; x++) {
+		for(int y = 0; y <= 16; y++) {
+			ocean_vertices.push_back(glm::vec4(min + step * x, -2.0f, min + step * y, 1.0f));
+		}
+	}
+	// push faces
+	for(int x = 0; x < 16; x++) {
+		for(int y = 0; y < 16; y++) {
+			ocean_faces.push_back(getVertexIdx(x, y, 17),
+									getVertexIdx(x + 1, y, 17),
+									getVertexIdx(x, y + 1, 17),
+									getVertexIdx(x + 1, y + 1, 17));
+		}
+	}
+}
+
+unsigned int getVertexIdx(int x, int y, int width) {
+	return (unsigned int) x * width + y;
 }
 
 
@@ -500,7 +577,7 @@ int main(int argc, char* argv[])
 	/*---------------------our codes ---------------------------*/
 	// Setup tessllation control shader
 	GLuint tess_control_shader_id = 0;
-	const char* tess_control_source_pointer = tessControlShader;
+	const char* tess_control_source_pointer = triangleTessControlShader;
 	CHECK_GL_ERROR(tess_control_shader_id = glCreateShader(GL_TESS_CONTROL_SHADER));
 	CHECK_GL_ERROR(glShaderSource(tess_control_shader_id, 1, &tess_control_source_pointer, nullptr));
 	glCompileShader(tess_control_shader_id);
@@ -510,7 +587,7 @@ int main(int argc, char* argv[])
 
 	// Setup tessllation evaluation shader
 	GLuint tess_eval_shader_id = 0;
-	const char* tess_eval_source_pointer = tessEvaluationShader;
+	const char* tess_eval_source_pointer = triangleTessEvaluationShader;
 	CHECK_GL_ERROR(tess_eval_shader_id = glCreateShader(GL_TESS_EVALUATION_SHADER));
 	CHECK_GL_ERROR(glShaderSource(tess_eval_shader_id, 1, &tess_eval_source_pointer, nullptr));
 	glCompileShader(tess_eval_shader_id);
