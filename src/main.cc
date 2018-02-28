@@ -89,6 +89,7 @@ in vec4 vertex_position_world_0[];
 uniform int innerLevel;
 uniform int outerLevel;
 uniform float elapsedTime;
+// uniform float tide_time;
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
 
@@ -113,15 +114,20 @@ void main(void) {
 	float w = 2.0 / waveLen;
 	float speed = 2.0;
 	float phi = speed * w;
-	vec2 wave_dir = normalize(vec2(1.0, 1.0));	// x and z direction
+	vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
 	float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
 
 
 	vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
-	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);
-	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);
-	wave_pos.y = wave_pos.y + amp * sin(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);	// height
+	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
 	gl_out[gl_InvocationID].gl_Position = wave_pos;
+
+	// // Gassian tide
+	// vec3 tide_direct = vec3(1.0, 0.0, 0.0, );
+	
+
 }
 
 )zzz";
