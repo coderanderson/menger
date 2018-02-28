@@ -104,37 +104,35 @@ void main(void) {
 		gl_TessLevelOuter[2] = 1.0 + outerLevel;
 		gl_TessLevelOuter[3] = 1.0 + outerLevel;
 	}
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	// gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
 	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
 	
-	// // rewrite gl_Position to create waves
-	// float amp = 0.5;	// amplitude
-	// float waveLen = 2.0;	// crest-to-crest distance
-	// float w = 2.0 / waveLen;
-	// float speed = 2.0;
-	// float phi = speed * w;
-	// vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
-	// float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
+	// rewrite gl_Position to create waves
+	float amp = 0.5;	// amplitude
+	float waveLen = 2.0;	// crest-to-crest distance
+	float w = 2.0 / waveLen;
+	float speed = 2.0;
+	float phi = speed * w;
+	vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
+	float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
 
+	vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
+	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
+	gl_out[gl_InvocationID].gl_Position = wave_pos;
 
-	// vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
-	// wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-	// wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-	// wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
-	// gl_out[gl_InvocationID].gl_Position = wave_pos;
 
 	// // Gassian tide
-	
 	float PI = 3.14;
 	float tide_speed = 10.0;
 
-	vec4 wave_pos = vertex_position_world_0[gl_InvocationID];
+	vec4 curr_pos = vertex_position_world_0[gl_InvocationID];
 	vec4 tide_direct = vec4(1.0, 0.0, 0.0, 0.0);
 	vec4 tide_start = vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
-	float tide_height = 10.0 * exp(-0.1 * dot(wave_pos - tide_center, wave_pos - tide_center) / 1.0);
-	// float tide_height = tide_speed * tide_time;
+	float tide_height = 10.0 * exp(-0.1 * dot(curr_pos - tide_center, curr_pos - tide_center) / 1.0);
 	gl_out[gl_InvocationID].gl_Position[1] += tide_height;
 }
 
