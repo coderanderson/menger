@@ -36,43 +36,47 @@ uniform mat4 view;
 uniform vec4 light_position;
 out vec4 vs_light_direction_0;
 out vec4 vertex_position_world_0;
+out vec4 vs_light_direction;
+out vec4 vertex_position_world;
 void main()
 {
 	gl_Position = view * vertex_position;
 	vs_light_direction_0 = -gl_Position + view * light_position;
 	vertex_position_world_0 = vertex_position;
+	vs_light_direction = -gl_Position + view * light_position;
+	vertex_position_world = vertex_position;
 }
 )zzz";
 
 
 
 
-const char* triangleTessControlShader =
-R"zzz(#version 410 core
+// const char* triangleTessControlShader =
+// R"zzz(#version 410 core
 
-in vec4 vs_light_direction_0[];
-in vec4 vertex_position_world_0[];
-uniform int innerLevel;
-uniform int outerLevel;
-out vec4 vs_light_direction_1[];
-out vec4 vertex_position_world_1[];
+// in vec4 vs_light_direction_0[];
+// in vec4 vertex_position_world_0[];
+// uniform int innerLevel;
+// uniform int outerLevel;
+// out vec4 vs_light_direction_1[];
+// out vec4 vertex_position_world_1[];
 
 
 
-layout (vertices = 3) out;
-void main(void) {
-	if(gl_InvocationID == 0) {
-		gl_TessLevelInner[0] = 1.0 + innerLevel;
-		gl_TessLevelOuter[0] = 1.0 + outerLevel;
-		gl_TessLevelOuter[1] = 1.0 + outerLevel;
-		gl_TessLevelOuter[2] = 1.0 + outerLevel;
-	}
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
-	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
-}
+// layout (vertices = 3) out;
+// void main(void) {
+// 	if(gl_InvocationID == 0) {
+// 		gl_TessLevelInner[0] = 1.0 + innerLevel;
+// 		gl_TessLevelOuter[0] = 1.0 + outerLevel;
+// 		gl_TessLevelOuter[1] = 1.0 + outerLevel;
+// 		gl_TessLevelOuter[2] = 1.0 + outerLevel;
+// 	}
+// 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+// 	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
+// 	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
+// }
 
-)zzz";
+// )zzz";
 
 
 const char* quadTessControlShader =
@@ -86,7 +90,7 @@ out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
 
 
-layout (vertices = 3) out;
+layout (vertices = 4) out;
 void main(void) {
 	if(gl_InvocationID == 0) {
 		gl_TessLevelInner[0] = 1.0 + innerLevel;
@@ -104,31 +108,31 @@ void main(void) {
 )zzz";
 
 
-const char* triangleTessEvaluationShader =
-R"zzz(#version 410 core
-in vec4 vs_light_direction_1[];
-in vec4 vertex_position_world_1[];
+// const char* triangleTessEvaluationShader =
+// R"zzz(#version 410 core
+// in vec4 vs_light_direction_1[];
+// in vec4 vertex_position_world_1[];
 
-out vec4 vs_light_direction;
-out vec4 vertex_position_world;
+// out vec4 vs_light_direction;
+// out vec4 vertex_position_world;
 
 
-layout(triangles, equal_spacing, cw) in;
-void main(void) {
-	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position
-					+ gl_TessCoord.y * gl_in[1].gl_Position
-					+ gl_TessCoord.z * gl_in[2].gl_Position);
+// layout(triangles, equal_spacing, cw) in;
+// void main(void) {
+// 	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position
+// 					+ gl_TessCoord.y * gl_in[1].gl_Position
+// 					+ gl_TessCoord.z * gl_in[2].gl_Position);
 
-	vs_light_direction = (gl_TessCoord.x * vs_light_direction_1[0]
-					+ gl_TessCoord.y * vs_light_direction_1[1]
-					+ gl_TessCoord.z * vs_light_direction_1[2]);
+// 	vs_light_direction = (gl_TessCoord.x * vs_light_direction_1[0]
+// 					+ gl_TessCoord.y * vs_light_direction_1[1]
+// 					+ gl_TessCoord.z * vs_light_direction_1[2]);
 
-	vertex_position_world = (gl_TessCoord.x * vertex_position_world_1[0]
-					+ gl_TessCoord.y * vertex_position_world_1[1]
-					+ gl_TessCoord.z * vertex_position_world_1[2]);
-}
+// 	vertex_position_world = (gl_TessCoord.x * vertex_position_world_1[0]
+// 					+ gl_TessCoord.y * vertex_position_world_1[1]
+// 					+ gl_TessCoord.z * vertex_position_world_1[2]);
+// }
 
-)zzz";
+// )zzz";
 
 
 const char* quadTessEvaluationShader =
@@ -164,7 +168,7 @@ R"zzz(#version 410 core
 
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout (triangle_strip, max_vertices = 4) out;
 uniform mat4 view;
 uniform mat4 projection;
 in vec4 vs_light_direction[];
@@ -285,7 +289,7 @@ CreateTriangle(std::vector<glm::vec4>& vertices,
 void 
 toggleWireframe() {
 	if(wireframeThresh == 0.0f) {
-		wireframeThresh = 0.001f;
+		wireframeThresh = 0.1f;
 	}
 	else {
 		wireframeThresh = 0.0f;
@@ -419,22 +423,26 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	g_current_button = button;
 }
 
-void make_floor(std::vector<glm::vec4>& floor_vertices,
-					 std::vector<glm::uvec3>& floor_faces) 
-{
-	float max = 1000.0f;
-	float min = -1000.0f;
+// void make_floor(std::vector<glm::vec4>& floor_vertices,
+// 					 std::vector<glm::uvec3>& floor_faces) 
+// {
+// 	float max = 1000.0f;
+// 	float min = -1000.0f;
 
-	floor_vertices.push_back(glm::vec4(min, -2.0f, min, 1.0f));
-	floor_vertices.push_back(glm::vec4(min, -2.0f, max, 1.0f));
-	floor_vertices.push_back(glm::vec4(max, -2.0f, max, 1.0f));
-	floor_vertices.push_back(glm::vec4(max, -2.0f, min, 1.0f));
+// 	floor_vertices.push_back(glm::vec4(min, -2.0f, min, 1.0f));
+// 	floor_vertices.push_back(glm::vec4(min, -2.0f, max, 1.0f));
+// 	floor_vertices.push_back(glm::vec4(max, -2.0f, max, 1.0f));
+// 	floor_vertices.push_back(glm::vec4(max, -2.0f, min, 1.0f));
 
-	floor_faces.push_back(glm::uvec3(0, 1, 2));
-	floor_faces.push_back(glm::uvec3(3, 4, 5));
+// 	floor_faces.push_back(glm::uvec3(0, 1, 2));
+// 	floor_faces.push_back(glm::uvec3(3, 4, 5));
+// }
+
+unsigned int getVertexIdx(int x, int y, int width) {
+	return (unsigned int) x * width + y;
 }
 
-void make_ocean(std::vector<glm::vec4>& ocean_vertices,
+void make_floor(std::vector<glm::vec4>& ocean_vertices,
 					 std::vector<glm::uvec4>& ocean_faces) {
 	float min = -20.0f, max = 20.0f;
 	float step = (max - min) / 16.0;
@@ -447,16 +455,14 @@ void make_ocean(std::vector<glm::vec4>& ocean_vertices,
 	// push faces
 	for(int x = 0; x < 16; x++) {
 		for(int y = 0; y < 16; y++) {
-			ocean_faces.push_back(getVertexIdx(x, y, 17),
-									getVertexIdx(x + 1, y, 17),
-									getVertexIdx(x, y + 1, 17),
-									getVertexIdx(x + 1, y + 1, 17));
+			ocean_faces.push_back(glm::uvec4(
+				getVertexIdx(x, y, 17),
+				getVertexIdx(x, y + 1, 17),
+				getVertexIdx(x + 1, y + 1, 17),
+				getVertexIdx(x + 1, y, 17)
+			));
 		}
 	}
-}
-
-unsigned int getVertexIdx(int x, int y, int width) {
-	return (unsigned int) x * width + y;
 }
 
 
@@ -540,7 +546,7 @@ int main(int argc, char* argv[])
 	// FIXME: load the floor into g_buffer_objects[kFloorVao][*],
 	//        and bind these VBO to g_array_objects[kFloorVao]
 	std::vector<glm::vec4> floor_vertices;
-	std::vector<glm::uvec3> floor_faces;
+	std::vector<glm::uvec4> floor_faces;
 
 	make_floor(floor_vertices, floor_faces);
 
@@ -562,7 +568,7 @@ int main(int argc, char* argv[])
 	// Setup floor element array buffer.
 	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[kFloorVao][kIndexBuffer]));
 	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-				sizeof(uint32_t) * floor_faces.size() * 3,
+				sizeof(uint32_t) * floor_faces.size() * 4,
 				floor_faces.data(), GL_STATIC_DRAW));
 
 	// Setup vertex shader.
@@ -577,24 +583,30 @@ int main(int argc, char* argv[])
 	/*---------------------our codes ---------------------------*/
 	// Setup tessllation control shader
 	GLuint tess_control_shader_id = 0;
-	const char* tess_control_source_pointer = triangleTessControlShader;
+	// const char* tess_control_source_pointer = triangleTessControlShader;
+	// CHECK_GL_ERROR(tess_control_shader_id = glCreateShader(GL_TESS_CONTROL_SHADER));
+	// CHECK_GL_ERROR(glShaderSource(tess_control_shader_id, 1, &tess_control_source_pointer, nullptr));
+	// glCompileShader(tess_control_shader_id);
+	// CHECK_GL_SHADER_ERROR(tess_control_shader_id);
+	const char* tess_control_source_pointer = quadTessControlShader;
 	CHECK_GL_ERROR(tess_control_shader_id = glCreateShader(GL_TESS_CONTROL_SHADER));
 	CHECK_GL_ERROR(glShaderSource(tess_control_shader_id, 1, &tess_control_source_pointer, nullptr));
 	glCompileShader(tess_control_shader_id);
 	CHECK_GL_SHADER_ERROR(tess_control_shader_id);
 
 
-
 	// Setup tessllation evaluation shader
 	GLuint tess_eval_shader_id = 0;
-	const char* tess_eval_source_pointer = triangleTessEvaluationShader;
+	// const char* tess_eval_source_pointer = triangleTessEvaluationShader;
+	// CHECK_GL_ERROR(tess_eval_shader_id = glCreateShader(GL_TESS_EVALUATION_SHADER));
+	// CHECK_GL_ERROR(glShaderSource(tess_eval_shader_id, 1, &tess_eval_source_pointer, nullptr));
+	// glCompileShader(tess_eval_shader_id);
+	// CHECK_GL_SHADER_ERROR(tess_eval_shader_id);
+	const char* tess_eval_source_pointer = quadTessEvaluationShader;
 	CHECK_GL_ERROR(tess_eval_shader_id = glCreateShader(GL_TESS_EVALUATION_SHADER));
 	CHECK_GL_ERROR(glShaderSource(tess_eval_shader_id, 1, &tess_eval_source_pointer, nullptr));
 	glCompileShader(tess_eval_shader_id);
 	CHECK_GL_SHADER_ERROR(tess_eval_shader_id);
-
-
-
 
 	// Setup geometry shader.
 	GLuint geometry_shader_id = 0;
@@ -657,8 +669,11 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, vertex_shader_id));
 
 	/* our shaders attached here */
+	// CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_control_shader_id));
+	// CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_eval_shader_id));
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_control_shader_id));
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_eval_shader_id));
+
 
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, geometry_shader_id));
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, floor_fragment_shader_id));
@@ -767,7 +782,8 @@ int main(int argc, char* argv[])
 
 		CHECK_GL_ERROR(glUniform1i(tess_outer_level_location, outerLevel));
 
-		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		glPatchParameteri(GL_PATCH_VERTICES, 4);
+		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 4, GL_UNSIGNED_INT, 0));
 
 
 		// Poll and swap.
