@@ -289,7 +289,7 @@ CreateTriangle(std::vector<glm::vec4>& vertices,
 void 
 toggleWireframe() {
 	if(wireframeThresh == 0.0f) {
-		wireframeThresh = 0.1f;
+		wireframeThresh = 0.01f;
 	}
 	else {
 		wireframeThresh = 0.0f;
@@ -442,27 +442,46 @@ unsigned int getVertexIdx(int x, int y, int width) {
 	return (unsigned int) x * width + y;
 }
 
-void make_floor(std::vector<glm::vec4>& ocean_vertices,
-					 std::vector<glm::uvec4>& ocean_faces) {
+void make_floor(std::vector<glm::vec4>& floor_vertices,
+					 std::vector<glm::uvec4>& floor_faces) {
 	float min = -20.0f, max = 20.0f;
-	float step = (max - min) / 16.0;
+	int fragmentNums = 16;
+	float step = (max - min) / fragmentNums;
 	// push vertices
-	for(int x = 0; x <= 16; x++) {
-		for(int y = 0; y <= 16; y++) {
-			ocean_vertices.push_back(glm::vec4(min + step * x, -2.0f, min + step * y, 1.0f));
+	for(int x = 0; x <= fragmentNums; x++) {
+		for(int y = 0; y <= fragmentNums; y++) {
+			floor_vertices.push_back(glm::vec4(min + step * x, -2.0f, min + step * y, 1.0f));
 		}
 	}
 	// push faces
-	for(int x = 0; x < 16; x++) {
-		for(int y = 0; y < 16; y++) {
-			ocean_faces.push_back(glm::uvec4(
-				getVertexIdx(x, y, 17),
-				getVertexIdx(x, y + 1, 17),
-				getVertexIdx(x + 1, y + 1, 17),
-				getVertexIdx(x + 1, y, 17)
+	for(int x = 0; x < fragmentNums; x++) {
+		for(int y = 0; y < fragmentNums; y++) {
+			floor_faces.push_back(glm::uvec4(
+				getVertexIdx(x, y, fragmentNums + 1),
+				getVertexIdx(x, y + 1, fragmentNums + 1),
+				getVertexIdx(x + 1, y + 1, fragmentNums + 1),
+				getVertexIdx(x + 1, y, fragmentNums + 1)
 			));
 		}
 	}
+
+	// float max = 20.0f;
+	// float min = -20.0f;
+	// float planey = -2.0f;
+
+	// float step = float((max - min) / 16.0);
+
+	// for (int i = min; i < max; i += step) {
+	// 	for (int j = min; j < max; j += step) {
+	// 		floor_vertices.push_back(glm::vec4(i, planey, j, 1.0f));
+	// 		floor_vertices.push_back(glm::vec4(i + step, planey, j, 1.0f));
+	// 		floor_vertices.push_back(glm::vec4(i + step, planey, j + step, 1.0f));
+	// 		floor_vertices.push_back(glm::vec4(i, planey, j + step, 1.0f));
+
+	// 		int v = floor_vertices.size();
+	// 		floor_faces.push_back(glm::vec4(v, v+1, v+2, v+3));
+	// 	}
+	// }
 }
 
 
@@ -502,7 +521,7 @@ int main(int argc, char* argv[])
         //FIXME: Create the geometry from a Menger object.
         //CreateTriangle(obj_vertices, obj_faces);
 
-	g_menger->set_nesting_level(3);
+	g_menger->set_nesting_level(0);
 	g_menger->generate_geometry(obj_vertices, obj_faces);
 
 	glm::vec4 min_bounds = glm::vec4(std::numeric_limits<float>::max());
@@ -730,7 +749,7 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 		                            sizeof(float) * obj_vertices.size() * 4,
 		                            obj_vertices.data(), GL_STATIC_DRAW));
-			CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[kFloorVao][kIndexBuffer]));
+			CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[kGeometryVao][kIndexBuffer]));
 			CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
 									sizeof(uint32_t) * obj_faces.size() * 3,
 									obj_faces.data(), GL_STATIC_DRAW));
