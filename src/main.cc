@@ -127,12 +127,26 @@ void main(void) {
 	// // Gassian tide
 	float PI = 3.14;
 	float tide_speed = 10.0;
+	float sigma = 2.0;
 
 	vec4 curr_pos = vertex_position_world_0[gl_InvocationID];
 	vec4 tide_direct = vec4(1.0, 0.0, 0.0, 0.0);
 	vec4 tide_start = vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
-	float tide_height = 10.0 * exp(-0.1 * dot(curr_pos - tide_center, curr_pos - tide_center) / 1.0);
+
+	float distance_square = dot(curr_pos - tide_center, curr_pos - tide_center);
+	float tide_height = 10.0 * exp(- distance_square / (2.0 * sigma * sigma));
+	
+	if(distance_square < (2 * sigma) * (2 * sigma)) {
+		gl_TessLevelInner[0] *= 3;
+		gl_TessLevelInner[1] *= 3;
+		gl_TessLevelOuter[0] *= 3;
+		gl_TessLevelOuter[1] *= 3;
+		gl_TessLevelOuter[2] *= 3;
+		gl_TessLevelOuter[3] *= 3;
+	}	
+
+
 	gl_out[gl_InvocationID].gl_Position[1] += tide_height;
 }
 
