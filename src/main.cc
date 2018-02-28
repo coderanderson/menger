@@ -89,7 +89,7 @@ in vec4 vertex_position_world_0[];
 uniform int innerLevel;
 uniform int outerLevel;
 uniform float elapsedTime;
-// uniform float tide_time;
+uniform float tide_time;
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
 
@@ -104,30 +104,38 @@ void main(void) {
 		gl_TessLevelOuter[2] = 1.0 + outerLevel;
 		gl_TessLevelOuter[3] = 1.0 + outerLevel;
 	}
-	// gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
 	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
 	
-	// rewrite gl_Position to create waves
-	float amp = 0.5;	// amplitude
-	float waveLen = 2.0;	// crest-to-crest distance
-	float w = 2.0 / waveLen;
-	float speed = 2.0;
-	float phi = speed * w;
-	vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
-	float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
+	// // rewrite gl_Position to create waves
+	// float amp = 0.5;	// amplitude
+	// float waveLen = 2.0;	// crest-to-crest distance
+	// float w = 2.0 / waveLen;
+	// float speed = 2.0;
+	// float phi = speed * w;
+	// vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
+	// float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
 
 
-	vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
-	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-	wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
-	gl_out[gl_InvocationID].gl_Position = wave_pos;
+	// vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
+	// wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	// wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	// wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
+	// gl_out[gl_InvocationID].gl_Position = wave_pos;
 
 	// // Gassian tide
-	// vec3 tide_direct = vec3(1.0, 0.0, 0.0, );
 	
+	float PI = 3.14;
+	float tide_speed = 10.0;
 
+	vec4 wave_pos = vertex_position_world_0[gl_InvocationID];
+	vec4 tide_direct = vec4(1.0, 0.0, 0.0, 0.0);
+	vec4 tide_start = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
+	float tide_height = 10.0 * exp(-0.1 * dot(wave_pos - tide_center, wave_pos - tide_center) / 1.0);
+	// float tide_height = tide_speed * tide_time;
+	gl_out[gl_InvocationID].gl_Position[1] += tide_height;
 }
 
 )zzz";
@@ -296,6 +304,15 @@ std::vector<glm::uvec3> obj_faces;
 float wireframeThresh = 0.0f;
 int innerLevel = 0, outerLevel = 0;
 
+
+auto start_time = std::chrono::system_clock::now();
+float getElapsedTime() {
+	auto end_time = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+	return elapsed_seconds.count();
+}
+float tideStartTime = getElapsedTime();
+
 void
 CreateTriangle(std::vector<glm::vec4>& vertices,
         std::vector<glm::uvec3>& indices)
@@ -385,15 +402,20 @@ KeyCallback(GLFWwindow* window,
 		g_camera.toggleFPS();
 	} else if(key ==  GLFW_KEY_F && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
 		toggleWireframe();
-	} else if(key == GLFW_KEY_MINUS) {
+	} else if(key == GLFW_KEY_MINUS && action != GLFW_RELEASE) {
 		outerLevel = std::max(0, outerLevel - 1);
-	} else if(key == GLFW_KEY_EQUAL) {
+	} else if(key == GLFW_KEY_EQUAL && action != GLFW_RELEASE) {
 		outerLevel = outerLevel + 1;
-	} else if(key == GLFW_KEY_COMMA) {
+	} else if(key == GLFW_KEY_COMMA && action != GLFW_RELEASE) {
 		innerLevel = std::max(0, innerLevel - 1);
-	} else if(key == GLFW_KEY_PERIOD) {
+	} else if(key == GLFW_KEY_PERIOD && action != GLFW_RELEASE) {
 		innerLevel = innerLevel + 1;
+	} else if(key == GLFW_KEY_T && action != GLFW_RELEASE) {
+		tideStartTime = getElapsedTime();
+		std::cout << "tide start time updated. value: " << tideStartTime << std::endl;
 	}
+
+
 
 
 
@@ -503,13 +525,6 @@ void make_floor(std::vector<glm::vec4>& floor_vertices,
 	// 		floor_faces.push_back(glm::vec4(v, v+1, v+2, v+3));
 	// 	}
 	// }
-}
-
-auto start_time = std::chrono::system_clock::now();
-float getElapsedTime() {
-	auto end_time = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-	return elapsed_seconds.count();
 }
 
 
@@ -757,6 +772,12 @@ int main(int argc, char* argv[])
 	GLint elapsed_time_location = 0;
 	CHECK_GL_ERROR(elapsed_time_location =
 			glGetUniformLocation(floor_program_id, "elapsedTime"));
+	GLint tide_time_location = 0;
+	CHECK_GL_ERROR(tide_time_location =
+			glGetUniformLocation(floor_program_id, "tide_time"));
+
+
+
 
 
 	// glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
@@ -839,6 +860,9 @@ int main(int argc, char* argv[])
 
 		CHECK_GL_ERROR(glUniform1f(elapsed_time_location, elapsedTime));	// elapsed time for waves
 		
+		CHECK_GL_ERROR(glUniform1f(tide_time_location, elapsedTime - tideStartTime));	// elapsed time for waves
+
+		std::cout << "tide time: " << elapsedTime - tideStartTime << std::endl;
 
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
 		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 4, GL_UNSIGNED_INT, 0));
