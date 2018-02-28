@@ -14,6 +14,8 @@
 #include <debuggl.h>
 #include "menger.h"
 #include "camera.h"
+#include <chrono>
+#include <ctime>
 
 
 int window_width = 800, window_height = 600;
@@ -86,6 +88,7 @@ in vec4 vs_light_direction_0[];
 in vec4 vertex_position_world_0[];
 uniform int innerLevel;
 uniform int outerLevel;
+uniform float elapsedTime;
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
 
@@ -100,9 +103,25 @@ void main(void) {
 		gl_TessLevelOuter[2] = 1.0 + outerLevel;
 		gl_TessLevelOuter[3] = 1.0 + outerLevel;
 	}
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	// gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	vs_light_direction_1[gl_InvocationID] = vs_light_direction_0[gl_InvocationID];
 	vertex_position_world_1[gl_InvocationID] = vertex_position_world_0[gl_InvocationID];
+	
+	// rewrite gl_Position to create waves
+	float amp = 0.5;	// amplitude
+	float waveLen = 2.0;	// crest-to-crest distance
+	float w = 2.0 / waveLen;
+	float speed = 2.0;
+	float phi = speed * w;
+	vec2 wave_dir = normalize(vec2(1.0, 1.0));	// x and z direction
+	float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
+
+
+	vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
+	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);
+	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);
+	wave_pos.y = wave_pos.y + amp * sin(w * (wave_dir[0] * wave_pos.x + wave_dir[1] * wave_pos.z) + phi * elapsedTime);	// height
+	gl_out[gl_InvocationID].gl_Position = wave_pos;
 }
 
 )zzz";
@@ -262,10 +281,6 @@ void main()
 	if(minBc < wireframeThresh) {
 		fragment_color = vec4(0.0, 256.0, 0.0, 1.0);
 	}
-
-	
-	
-
 }
 )zzz";
 
@@ -362,7 +377,7 @@ KeyCallback(GLFWwindow* window,
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
 		// FIXME: FPS mode on/off
 		g_camera.toggleFPS();
-	} else if(key ==  GLFW_KEY_F && action != GLFW_RELEASE) {
+	} else if(key ==  GLFW_KEY_F && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
 		toggleWireframe();
 	} else if(key == GLFW_KEY_MINUS) {
 		outerLevel = std::max(0, outerLevel - 1);
@@ -484,10 +499,21 @@ void make_floor(std::vector<glm::vec4>& floor_vertices,
 	// }
 }
 
+auto start_time = std::chrono::system_clock::now();
+float getElapsedTime() {
+	auto end_time = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+	return elapsed_seconds.count();
+}
+
 
 
 int main(int argc, char* argv[])
 {
+	float elapsedTime = getElapsedTime();	// in miliseconds
+	std::cout << "elapsedTime: " << elapsedTime << std::endl;
+ 
+
 	std::string window_title = "Menger";
 	if (!glfwInit()) exit(EXIT_FAILURE);
 	g_menger = std::make_shared<Menger>(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
@@ -722,6 +748,9 @@ int main(int argc, char* argv[])
 	GLint tess_outer_level_location = 0;
 	CHECK_GL_ERROR(tess_outer_level_location =
 			glGetUniformLocation(floor_program_id, "outerLevel"));
+	GLint elapsed_time_location = 0;
+	CHECK_GL_ERROR(elapsed_time_location =
+			glGetUniformLocation(floor_program_id, "elapsedTime"));
 
 
 	// glm::vec4 light_position = glm::vec4(10.0f, 10.0f, 10.0f, 1.0f);
@@ -729,6 +758,7 @@ int main(int argc, char* argv[])
 	float aspect = 0.0f;
 	float theta = 0.0f;
 	while (!glfwWindowShouldClose(window)) {
+		elapsedTime = getElapsedTime();
 		// Setup some basic window stuff.
 		glfwGetFramebufferSize(window, &window_width, &window_height);
 		glViewport(0, 0, window_width, window_height);
@@ -800,6 +830,9 @@ int main(int argc, char* argv[])
 		CHECK_GL_ERROR(glUniform1i(tess_inner_level_location, innerLevel));
 
 		CHECK_GL_ERROR(glUniform1i(tess_outer_level_location, outerLevel));
+
+		CHECK_GL_ERROR(glUniform1f(elapsed_time_location, elapsedTime));	// elapsed time for waves
+		
 
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
 		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 4, GL_UNSIGNED_INT, 0));
