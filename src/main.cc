@@ -1011,7 +1011,7 @@ int main(int argc, char* argv[])
 
 
 
-		std::cout << "tide time: " << elapsedTime - tideStartTime << std::endl;
+		// std::cout << "tide time: " << elapsedTime - tideStartTime << std::endl;
 
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
 		CHECK_GL_ERROR(glDrawElements(GL_PATCHES, floor_faces.size() * 4, GL_UNSIGNED_INT, 0));
