@@ -89,6 +89,7 @@ in vec4 vertex_position_world_0[];
 uniform int innerLevel;
 uniform int outerLevel;
 uniform float tide_time;
+uniform int isOceanMode;
 
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
@@ -115,7 +116,8 @@ void main(void) {
 	control_tide_center[gl_InvocationID] = tide_start + tide_direct * tide_time * tide_speed;
 	vec4 curr_pos = vertex_position_world_0[gl_InvocationID];
 	float adaptive_range = 5.0f;
-	if(distance(curr_pos, control_tide_center[gl_InvocationID]) < adaptive_range) {
+	
+	if(isOceanMode == 1 && distance(curr_pos, control_tide_center[gl_InvocationID]) < adaptive_range) {
 		gl_TessLevelInner[0] *= 3;
 		gl_TessLevelInner[1] *= 3;
 		gl_TessLevelOuter[0] *= 3;
@@ -374,7 +376,7 @@ void main()
 
 	// add specular effects
 	vec3 water_ks = vec3(0.45, 0.45, 0.45);
-	float alpha = 0.8;
+	float alpha = 1.0;
 	vec3 look_dir = normalize(eye_position - vertex_position_world_.xyz);
 	vec3 light_pixel_dir = normalize(light_position.xyz - vertex_position_world_.xyz);
 	vec3 R = 2 * dot(normal.xyz, light_pixel_dir) * normal.xyz - light_pixel_dir;
