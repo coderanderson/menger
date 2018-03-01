@@ -425,6 +425,7 @@ std::vector<glm::vec4> obj_vertices;
 std::vector<glm::uvec3> obj_faces;
 
 float wireframeThresh = 0.0f;
+auto polygonMode = GL_FILL;
 int innerLevel = 0, outerLevel = 0;
 
 
@@ -455,6 +456,18 @@ toggleWireframe() {
 	else {
 		wireframeThresh = 0.0f;
 	}
+}
+
+
+void
+togglePolygonMode() {
+	if(polygonMode == GL_FILL) {
+		polygonMode = GL_LINE;
+	}
+	else {
+		polygonMode = GL_FILL;
+	}
+	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 }
 
 // FIXME: Save geometry to OBJ file
@@ -524,6 +537,8 @@ KeyCallback(GLFWwindow* window,
 		// FIXME: FPS mode on/off
 		g_camera.toggleFPS();
 	} else if(key ==  GLFW_KEY_F && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
+		togglePolygonMode();
+	} else if(key == GLFW_KEY_F && mods != GLFW_MOD_CONTROL && action != GLFW_RELEASE) {
 		toggleWireframe();
 	} else if(key == GLFW_KEY_MINUS && action != GLFW_RELEASE) {
 		outerLevel = std::max(0, outerLevel - 1);
