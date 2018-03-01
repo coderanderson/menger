@@ -200,8 +200,15 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 4) out;
 uniform mat4 view;
 uniform mat4 projection;
+uniform float elapsedTime;
+uniform float tide_time;
+uniform int isOceanMode;
+
 in vec4 vs_light_direction[];
 in vec4 vertex_position_world[];
+in vec4 eval_tide_center[];
+
+
 
 flat out vec4 normal;
 out vec4 light_direction;
@@ -209,155 +216,223 @@ out vec4 vertex_position_world_;
 out vec3 v_bycentric;
 void main()
 {
-	int n = 0;
+	if(isOceanMode == 0) {
+		int n = 0;
+		mat4 inv = inverse(view);
 
-	mat4 inv = inverse(view);
-
-	vec4 a = inv * vec4(gl_in[0].gl_Position.xyz, 1.0f);
-	vec4 b = inv * vec4(gl_in[1].gl_Position.xyz, 1.0f);
-	vec4 c = inv * vec4(gl_in[2].gl_Position.xyz, 1.0f);
-	
-	vec3 temp_a = vec3(a.x, a.y, a.z);
-	vec3 temp_b = vec3(b.x, b.y, b.z);
-	vec3 temp_c = vec3(c.x, c.y, c.z);
-	normal = vec4(normalize(cross(temp_b - temp_a, temp_c - temp_a)), 1.0f);
-
-
+		vec4 a = inv * vec4(gl_in[0].gl_Position.xyz, 1.0f);
+		vec4 b = inv * vec4(gl_in[1].gl_Position.xyz, 1.0f);
+		vec4 c = inv * vec4(gl_in[2].gl_Position.xyz, 1.0f);
+		
+		vec3 temp_a = vec3(a.x, a.y, a.z);
+		vec3 temp_b = vec3(b.x, b.y, b.z);
+		vec3 temp_c = vec3(c.x, c.y, c.z);
+		normal = vec4(normalize(cross(temp_b - temp_a, temp_c - temp_a)), 1.0f);
 
 
-	for (n = 0; n < gl_in.length(); n++) {
-		light_direction = vs_light_direction[n];
-		vertex_position_world_ = vertex_position_world[n];
-		gl_Position = projection * gl_in[n].gl_Position;
-		if(n == 0) {
-			v_bycentric = vec3(1, 0, 0);
+
+
+		for (n = 0; n < gl_in.length(); n++) {
+			light_direction = vs_light_direction[n];
+			vertex_position_world_ = vertex_position_world[n];
+			gl_Position = projection * gl_in[n].gl_Position;
+			if(n == 0) {
+				v_bycentric = vec3(1, 0, 0);
+			}
+			else if(n == 1) {
+				v_bycentric = vec3(0, 1, 0);
+			}
+			else {
+				v_bycentric = vec3(0, 0, 1);
+			}
+			EmitVertex();
 		}
-		else if(n == 1) {
-			v_bycentric = vec3(0, 1, 0);
-		}
-		else {
-			v_bycentric = vec3(0, 0, 1);
-		}
-		EmitVertex();
+		EndPrimitive();
 	}
-	EndPrimitive();
+	else {
+		int n = 0;
+
+		for (n = 0; n < gl_in.length(); n++) {
+			light_direction = vs_light_direction[n];
+			vertex_position_world_ = vertex_position_world[n];
+
+
+			/*---------------------------------------------------------------------------------------------*/
+			vec4 base_position = gl_in[n].gl_Position;
+
+
+			// rewrite gl_Position to create waves
+
+			float amp = 1.0;	// amplitude
+			float waveLen = 2.0;	// crest-to-crest distance
+			float w = 2.0 / waveLen;
+			float speed = 2.0;
+			float phi = speed * w;
+			vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
+			float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
+
+			vec4 wave_pos = base_position;
+			wave_pos.y += amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
+
+			
+			float heightDiffX = w * wave_dir.x * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+			float heightDiffZ = w * wave_dir.z * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+			vec3 wave_normal = vec3(-heightDiffX, 1.0, -heightDiffZ);
+			normal = vec4(wave_normal, 1);
+			
+
+			// // Gassian tide
+			float PI = 3.14;
+			float tide_speed = 5.0;
+			float tide_amp = 20.0;
+			float sigma = 2.0;
+
+			vec4 curr_pos = vertex_position_world_;
+			vec4 tide_center = eval_tide_center[n];
+
+			float distance_square = dot(curr_pos - tide_center, curr_pos - tide_center);
+			float tide_height = tide_amp * exp(- distance_square / (2.0 * sigma * sigma));
+
+			wave_pos.y += tide_height;
+			
+			gl_Position = projection * wave_pos;
+
+			/*---------------------------------------------------------------------------------------------*/
+
+
+
+			
+			if(n == 0) {
+				v_bycentric = vec3(1, 0, 0);
+			}
+			else if(n == 1) {
+				v_bycentric = vec3(0, 1, 0);
+			}
+			else {
+				v_bycentric = vec3(0, 0, 1);
+			}
+			EmitVertex();
+		}
+		EndPrimitive();
+	}
+	
 }
 )zzz";
 
 
-const char* ocean_geometry_shader =
-R"zzz(#version 410 core
+// const char* ocean_geometry_shader =
+// R"zzz(#version 410 core
 
 
-layout (triangles) in;
-layout (triangle_strip, max_vertices = 4) out;
-uniform mat4 view;
-uniform mat4 projection;
-uniform float elapsedTime;
-uniform float tide_time;
+// layout (triangles) in;
+// layout (triangle_strip, max_vertices = 4) out;
+// uniform mat4 view;
+// uniform mat4 projection;
+// uniform float elapsedTime;
+// uniform float tide_time;
 
-in vec4 vs_light_direction[];
-in vec4 vertex_position_world[];
-in vec4 eval_tide_center[];
+// in vec4 vs_light_direction[];
+// in vec4 vertex_position_world[];
+// in vec4 eval_tide_center[];
 
-out vec4 light_direction;
-out vec4 vertex_position_world_;
-out vec4 geometry_normal;
-out vec3 v_bycentric;
-void main()
-{
-	int n = 0;
+// out vec4 light_direction;
+// out vec4 vertex_position_world_;
+// out vec4 geometry_normal;
+// out vec3 v_bycentric;
+// void main()
+// {
+// 	int n = 0;
 
 	
-	for (n = 0; n < gl_in.length(); n++) {
-		light_direction = vs_light_direction[n];
-		vertex_position_world_ = vertex_position_world[n];
+// 	for (n = 0; n < gl_in.length(); n++) {
+// 		light_direction = vs_light_direction[n];
+// 		vertex_position_world_ = vertex_position_world[n];
 
 
-		/*---------------------------------------------------------------------------------------------*/
-		vec4 base_position = gl_in[n].gl_Position;
+// 		/*---------------------------------------------------------------------------------------------*/
+// 		vec4 base_position = gl_in[n].gl_Position;
 
 
-		// rewrite gl_Position to create waves
+// 		// rewrite gl_Position to create waves
 
-		float amp = 1.0;	// amplitude
-		float waveLen = 2.0;	// crest-to-crest distance
-		float w = 2.0 / waveLen;
-		float speed = 2.0;
-		float phi = speed * w;
-		vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
-		float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
+// 		float amp = 1.0;	// amplitude
+// 		float waveLen = 2.0;	// crest-to-crest distance
+// 		float w = 2.0 / waveLen;
+// 		float speed = 2.0;
+// 		float phi = speed * w;
+// 		vec4 wave_dir = normalize(vec4(1.0, 0.0, 1.0, 0.0));	// x and z direction
+// 		float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
 
-		vec4 wave_pos = base_position;
-		// wave_pos.x = wave_pos.x + Q * amp * wave_dir.x * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-		// wave_pos.z = wave_pos.z + Q * amp * wave_dir.z * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-		// wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
+// 		vec4 wave_pos = base_position;
+// 		// wave_pos.x = wave_pos.x + Q * amp * wave_dir.x * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+// 		// wave_pos.z = wave_pos.z + Q * amp * wave_dir.z * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+// 		// wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
 		
-		wave_pos.y += amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
-		// gl_Position = projection * wave_pos;
-
-		
-		float heightDiffX = w * wave_dir.x * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
-		float heightDiffZ = w * wave_dir.z * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
-		vec3 wave_normal = vec3(-heightDiffX, 1.0, -heightDiffZ);
-		geometry_normal = vec4(wave_normal, 1);
-		
-
-		// // Gassian tide
-		float PI = 3.14;
-		float tide_speed = 5.0;
-		float tide_amp = 20.0;
-		float sigma = 2.0;
-
-		vec4 curr_pos = vertex_position_world_;
-		// vec4 tide_direct = vec4(1.0, 0.0, 0.0, 0.0);
-		// vec4 tide_start = vec4(0.0, 0.0, 0.0, 1.0);
-		// vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
-		vec4 tide_center = eval_tide_center[n];
-
-		float distance_square = dot(curr_pos - tide_center, curr_pos - tide_center);
-		float tide_height = tide_amp * exp(- distance_square / (2.0 * sigma * sigma));
-
-		wave_pos.y += tide_height;
-		
-		gl_Position = projection * wave_pos;
-
-
-		// vec4 tide_pos = base_position;
-		
-		// tide_pos.y += curr_pos.x;
-		
-		// gl_Position = projection * tide_pos;
-
-		// float heightDiffX_tide = (curr_pos.x - tide_center.x) * tide_height;
-		// float heightDiffZ_tide = (curr_pos.z - tide_center.z) * tide_height;
-
-
-		// vec3 tide_normal = vec3(-heightDiffX_tide, 1.0, -heightDiffZ_tide);
-		// geometry_normal = vec4(tide_normal, 1.0);
-		
-
-
-
-		/*---------------------------------------------------------------------------------------------*/
-
-
+// 		wave_pos.y += amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
+// 		// gl_Position = projection * wave_pos;
 
 		
-		if(n == 0) {
-			v_bycentric = vec3(1, 0, 0);
-		}
-		else if(n == 1) {
-			v_bycentric = vec3(0, 1, 0);
-		}
-		else {
-			v_bycentric = vec3(0, 0, 1);
-		}
-		EmitVertex();
-	}
-	EndPrimitive();
-}
-)zzz";
+// 		float heightDiffX = w * wave_dir.x * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+// 		float heightDiffZ = w * wave_dir.z * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+// 		vec3 wave_normal = vec3(-heightDiffX, 1.0, -heightDiffZ);
+// 		geometry_normal = vec4(wave_normal, 1);
+		
+
+// 		// // Gassian tide
+// 		float PI = 3.14;
+// 		float tide_speed = 5.0;
+// 		float tide_amp = 20.0;
+// 		float sigma = 2.0;
+
+// 		vec4 curr_pos = vertex_position_world_;
+// 		// vec4 tide_direct = vec4(1.0, 0.0, 0.0, 0.0);
+// 		// vec4 tide_start = vec4(0.0, 0.0, 0.0, 1.0);
+// 		// vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
+// 		vec4 tide_center = eval_tide_center[n];
+
+// 		float distance_square = dot(curr_pos - tide_center, curr_pos - tide_center);
+// 		float tide_height = tide_amp * exp(- distance_square / (2.0 * sigma * sigma));
+
+// 		wave_pos.y += tide_height;
+		
+// 		gl_Position = projection * wave_pos;
+
+
+// 		// vec4 tide_pos = base_position;
+		
+// 		// tide_pos.y += curr_pos.x;
+		
+// 		// gl_Position = projection * tide_pos;
+
+// 		// float heightDiffX_tide = (curr_pos.x - tide_center.x) * tide_height;
+// 		// float heightDiffZ_tide = (curr_pos.z - tide_center.z) * tide_height;
+
+
+// 		// vec3 tide_normal = vec3(-heightDiffX_tide, 1.0, -heightDiffZ_tide);
+// 		// geometry_normal = vec4(tide_normal, 1.0);
+		
+
+
+
+// 		/*---------------------------------------------------------------------------------------------*/
+
+
+
+		
+// 		if(n == 0) {
+// 			v_bycentric = vec3(1, 0, 0);
+// 		}
+// 		else if(n == 1) {
+// 			v_bycentric = vec3(0, 1, 0);
+// 		}
+// 		else {
+// 			v_bycentric = vec3(0, 0, 1);
+// 		}
+// 		EmitVertex();
+// 	}
+// 	EndPrimitive();
+// }
+// )zzz";
 
 
 
@@ -388,32 +463,30 @@ R"zzz(#version 410 core
 flat in vec4 normal;
 
 uniform float wireframeThresh;
+uniform int isOceanMode;
 
 in vec3 v_bycentric;
 in vec4 light_direction;
 in vec4 vertex_position_world_;
-in vec4 geometry_normal;
 out vec4 fragment_color;
 
 void main()
 {
-	vec4 color = vec4(normalize(vec3(0.0, 41.0, 58.0)), 1.0);
-	float dot_nl = dot(normalize(light_direction), normalize(geometry_normal) );
+
+	vec4 color;
+	if(isOceanMode != 0) {
+		color = vec4(normalize(vec3(0.0, 41.0, 58.0)), 1.0);
+	}
+	else {
+		if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2.0) == 0) {
+			color = vec4(0.0, 0.0, 0.0, 1.0);
+		} else {
+			color = vec4(1.0, 1.0, 1.0, 1.0);
+		}
+	}
+	float dot_nl = dot(normalize(light_direction), normalize(normal) );
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
-
-
-	// vec4 color;
-	// if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2.0) == 0) {
-	// 	color = vec4(0.0, 0.0, 0.0, 1.0);
-	// } else {
-	// 	color = vec4(1.0, 1.0, 1.0, 1.0);
-	// }
-
-	// float dot_nl = dot(normalize(light_direction), normal);
-	// dot_nl = clamp(dot_nl, 0.0, 1.0);
-	// fragment_color = clamp(dot_nl * color, 0.0, 1.0);
-
 	float minBc = min(min(v_bycentric.x, v_bycentric.y), v_bycentric.z);
 	if(minBc < wireframeThresh) {
 		fragment_color = vec4(0.0, 1.0, 0.0, 1.0);
@@ -427,6 +500,7 @@ std::vector<glm::uvec3> obj_faces;
 float wireframeThresh = 0.0f;
 auto polygonMode = GL_FILL;
 int innerLevel = 0, outerLevel = 0;
+int isOceanMode = 0;
 
 
 auto start_time = std::chrono::system_clock::now();
@@ -468,6 +542,16 @@ togglePolygonMode() {
 		polygonMode = GL_FILL;
 	}
 	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
+}
+
+void
+toggleOceanMode() {
+	if(isOceanMode == 0) {
+		isOceanMode = 1;
+	}
+	else {
+		isOceanMode = 0;
+	}
 }
 
 // FIXME: Save geometry to OBJ file
@@ -540,6 +624,8 @@ KeyCallback(GLFWwindow* window,
 		togglePolygonMode();
 	} else if(key == GLFW_KEY_F && mods != GLFW_MOD_CONTROL && action != GLFW_RELEASE) {
 		toggleWireframe();
+	} else if(key == GLFW_KEY_O && mods == GLFW_MOD_CONTROL && action == GLFW_RELEASE) {
+		toggleOceanMode();
 	} else if(key == GLFW_KEY_MINUS && action != GLFW_RELEASE) {
 		outerLevel = std::max(0, outerLevel - 1);
 	} else if(key == GLFW_KEY_EQUAL && action != GLFW_RELEASE) {
@@ -821,12 +907,12 @@ int main(int argc, char* argv[])
 	CHECK_GL_SHADER_ERROR(geometry_shader_id);
 
 	// Setup ocean geometry shader.
-	GLuint ocean_geometry_shader_id = 0;
-	const char* ocean_geometry_source_pointer = ocean_geometry_shader;
-	CHECK_GL_ERROR(ocean_geometry_shader_id = glCreateShader(GL_GEOMETRY_SHADER));
-	CHECK_GL_ERROR(glShaderSource(ocean_geometry_shader_id, 1, &ocean_geometry_source_pointer, nullptr));
-	glCompileShader(ocean_geometry_shader_id);
-	CHECK_GL_SHADER_ERROR(ocean_geometry_shader_id);
+	// GLuint ocean_geometry_shader_id = 0;
+	// const char* ocean_geometry_source_pointer = ocean_geometry_shader;
+	// CHECK_GL_ERROR(ocean_geometry_shader_id = glCreateShader(GL_GEOMETRY_SHADER));
+	// CHECK_GL_ERROR(glShaderSource(ocean_geometry_shader_id, 1, &ocean_geometry_source_pointer, nullptr));
+	// glCompileShader(ocean_geometry_shader_id);
+	// CHECK_GL_SHADER_ERROR(ocean_geometry_shader_id);
 
 
 	// Setup fragment shader.
@@ -887,8 +973,8 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_control_shader_id));
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, tess_eval_shader_id));
 	
-	// CHECK_GL_ERROR(glAttachShader(floor_program_id, geometry_shader_id));
-	CHECK_GL_ERROR(glAttachShader(floor_program_id, ocean_geometry_shader_id));
+	CHECK_GL_ERROR(glAttachShader(floor_program_id, geometry_shader_id));
+	// CHECK_GL_ERROR(glAttachShader(floor_program_id, ocean_geometry_shader_id));
 
 	CHECK_GL_ERROR(glAttachShader(floor_program_id, floor_fragment_shader_id));
 
@@ -923,6 +1009,9 @@ int main(int argc, char* argv[])
 	GLint tide_time_location = 0;
 	CHECK_GL_ERROR(tide_time_location =
 			glGetUniformLocation(floor_program_id, "tide_time"));
+	GLint is_ocean_mode_location = 0;
+	CHECK_GL_ERROR(is_ocean_mode_location =
+			glGetUniformLocation(floor_program_id, "isOceanMode"));
 
 
 
@@ -1009,6 +1098,8 @@ int main(int argc, char* argv[])
 		CHECK_GL_ERROR(glUniform1f(elapsed_time_location, elapsedTime));	// elapsed time for waves
 		
 		CHECK_GL_ERROR(glUniform1f(tide_time_location, elapsedTime - tideStartTime));	// elapsed time for waves
+
+		CHECK_GL_ERROR(glUniform1i(is_ocean_mode_location, isOceanMode));
 
 		std::cout << "tide time: " << elapsedTime - tideStartTime << std::endl;
 
