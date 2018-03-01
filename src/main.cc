@@ -92,6 +92,7 @@ uniform float elapsedTime;
 uniform float tide_time;
 out vec4 vs_light_direction_1[];
 out vec4 vertex_position_world_1[];
+out vec4 quad_normal[];
 
 
 layout (vertices = 4) out;
@@ -118,15 +119,27 @@ void main(void) {
 	float Q = 2.0;	//Qi is a parameter that controls the steepness of the waves
 
 	vec4 wave_pos = gl_in[gl_InvocationID].gl_Position;
-	wave_pos.x = wave_pos.x + Q * amp * wave_dir[0] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
-	wave_pos.z = wave_pos.z + Q * amp * wave_dir[1] * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.x = wave_pos.x + Q * amp * wave_dir.x * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
+	wave_pos.z = wave_pos.z + Q * amp * wave_dir.z * cos(w * dot(wave_pos, wave_dir) + phi * elapsedTime);
 	wave_pos.y = wave_pos.y + amp * sin(w * dot(wave_pos, wave_dir) + phi * elapsedTime);	// height
 	gl_out[gl_InvocationID].gl_Position = wave_pos;
 
+	
+	float heightDiffX = w * wave_dir.x * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+	float heightDiffZ = w * wave_dir.z * amp * cos(dot(wave_dir, wave_pos) * w + phi * elapsedTime);	
+	// vec3 partialX = vec3(1.0, heightDiffX, 0.0);
+	// vec3 partialZ = vec3(0.0, heightDiffZ, 1.0);
+	// quad_normal[gl_InvocationID] = vec4(normalize(cross(partialZ, partialX)), 1.0);
+	// vec3 wave_normal = cross(partialZ, partialX);
+
+	vec3 wave_normal = vec3(-heightDiffX, 1.0, -heightDiffZ);
+	
+	
 
 	// // Gassian tide
 	float PI = 3.14;
 	float tide_speed = 10.0;
+	float tide_amp = 10.0;
 	float sigma = 2.0;
 
 	vec4 curr_pos = vertex_position_world_0[gl_InvocationID];
@@ -135,7 +148,7 @@ void main(void) {
 	vec4 tide_center = tide_start + tide_direct * tide_time * tide_speed;
 
 	float distance_square = dot(curr_pos - tide_center, curr_pos - tide_center);
-	float tide_height = 10.0 * exp(- distance_square / (2.0 * sigma * sigma));
+	float tide_height = tide_amp * exp(- distance_square / (2.0 * sigma * sigma));
 	
 	if(distance_square < (2 * sigma) * (2 * sigma)) {
 		gl_TessLevelInner[0] *= 3;
@@ -146,8 +159,18 @@ void main(void) {
 		gl_TessLevelOuter[3] *= 3;
 	}	
 
-
 	gl_out[gl_InvocationID].gl_Position[1] += tide_height;
+
+	float heightDiffX_tide = (curr_pos.x - tide_center.x) * tide_height;
+	float heightDiffZ_tide = (curr_pos.z - tide_center.z) * tide_height;
+	// vec3 partialX_tide = vec3(1.0, heightDiffX_tide, 0.0);
+	// vec3 partialZ_tide = vec3(0.0, heightDiffZ_tide, 1.0);
+	// vec3 tide_normal = cross(partialX_tide, partialZ_tide);
+	// vec3 tide_normal = vec3(0.0, 0.0, 0.0);
+
+	vec3 tide_normal = vec3(-heightDiffX_tide, 1.0, -heightDiffZ_tide);
+
+	quad_normal[gl_InvocationID] = vec4(normalize(wave_normal + tide_normal), 1.0);
 }
 
 )zzz";
@@ -184,9 +207,11 @@ const char* quadTessEvaluationShader =
 R"zzz(#version 410 core
 in vec4 vs_light_direction_1[];
 in vec4 vertex_position_world_1[];
+in vec4 quad_normal[];
 
 out vec4 vs_light_direction;
 out vec4 vertex_position_world;
+out vec4 eval_normal;
 
 
 layout(quads, equal_spacing, cw) in;
@@ -203,6 +228,10 @@ void main(void) {
 	vec4 vertex_pos1 = mix(vertex_position_world_1[1], vertex_position_world_1[0], gl_TessCoord.x);
 	vec4 vertex_pos2 = mix(vertex_position_world_1[2], vertex_position_world_1[3], gl_TessCoord.x);
 	vertex_position_world = mix(vertex_pos1, vertex_pos2, gl_TessCoord.y);
+
+	vec4 eval_normal1 = mix(quad_normal[1], quad_normal[0], gl_TessCoord.x);
+	vec4 eval_normal2 = mix(quad_normal[2], quad_normal[3], gl_TessCoord.x);
+	eval_normal = mix(eval_normal1, eval_normal2, gl_TessCoord.y);
 }
 
 )zzz";
@@ -218,9 +247,12 @@ uniform mat4 view;
 uniform mat4 projection;
 in vec4 vs_light_direction[];
 in vec4 vertex_position_world[];
+in vec4 eval_normal[];
+
 flat out vec4 normal;
 out vec4 light_direction;
 out vec4 vertex_position_world_;
+out vec4 geometry_normal;
 out vec3 v_bycentric;
 void main()
 {
@@ -241,6 +273,9 @@ void main()
 		light_direction = vs_light_direction[n];
 		gl_Position = projection * gl_in[n].gl_Position;
 		vertex_position_world_ = vertex_position_world[n];
+
+		geometry_normal = eval_normal[n];
+		
 		if(n == 0) {
 			v_bycentric = vec3(1, 0, 0);
 		}
@@ -289,23 +324,31 @@ uniform float wireframeThresh;
 in vec3 v_bycentric;
 in vec4 light_direction;
 in vec4 vertex_position_world_;
+in vec4 geometry_normal;
 out vec4 fragment_color;
+
 void main()
 {
-	vec4 color;
-	if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2.0) == 0) {
-		color = vec4(0.0, 0.0, 0.0, 1.0);
-	} else {
-		color = vec4(1.0, 1.0, 1.0, 1.0);
-	}
-
-	float dot_nl = dot(normalize(light_direction), normal);
+	vec4 color = vec4(0.0, 0.0, 1.0, 1.0);
+	float dot_nl = dot(normalize(light_direction), normalize(geometry_normal));
 	dot_nl = clamp(dot_nl, 0.0, 1.0);
 	fragment_color = clamp(dot_nl * color, 0.0, 1.0);
 
+
+	// vec4 color;
+	// if (mod(floor(vertex_position_world_[0]) + floor(vertex_position_world_[2]), 2.0) == 0) {
+	// 	color = vec4(0.0, 0.0, 0.0, 1.0);
+	// } else {
+	// 	color = vec4(1.0, 1.0, 1.0, 1.0);
+	// }
+
+	// float dot_nl = dot(normalize(light_direction), normal);
+	// dot_nl = clamp(dot_nl, 0.0, 1.0);
+	// fragment_color = clamp(dot_nl * color, 0.0, 1.0);
+
 	float minBc = min(min(v_bycentric.x, v_bycentric.y), v_bycentric.z);
 	if(minBc < wireframeThresh) {
-		fragment_color = vec4(0.0, 256.0, 0.0, 1.0);
+		fragment_color = vec4(0.0, 1.0, 0.0, 1.0);
 	}
 }
 )zzz";
