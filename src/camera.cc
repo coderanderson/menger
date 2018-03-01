@@ -23,6 +23,11 @@ glm::mat4 Camera::get_view_matrix() const{
 	return res;
 }
 
+glm::vec3
+Camera::get_eye_position() const {
+	return eye_;
+}
+
 void
 Camera::toggleFPS() {
 	fps_on = !fps_on;

@@ -7,6 +7,7 @@
 class Camera {
 public:
 	glm::mat4 get_view_matrix() const;
+	glm::vec3 get_eye_position() const;
 	void toggleFPS();
 	void setMouseCoord(float mouse_x, float mouse_y);
 	void rotate(float mouse_x, float mouse_y);
